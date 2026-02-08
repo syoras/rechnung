@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
     <div id="toast-container"></div>
@@ -41,11 +43,18 @@
                     <h2 id="page-title">Startseite</h2>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-secondary" id="togglePreviewBtn"><i data-lucide="eye"></i><span>Vorschau Umschalten</span></button>
-                    <button class="btn btn-secondary" id="updatePreviewBtn"><i data-lucide="refresh-cw"></i><span>Vorschau</span></button>
-                    <button class="btn btn-secondary" id="saveInvoice"><i data-lucide="save"></i><span>Speichern</span></button>
-                    <button class="btn btn-secondary" id="printPDF"><i data-lucide="printer"></i><span>Drucken</span></button>
-                    <button class="btn btn-primary" id="downloadPDF"><i data-lucide="download"></i><span>PDF Download</span></button>
+                    <button class="btn btn-secondary" id="togglePreviewBtn"><i data-lucide="eye"></i><span>Vorschau
+                            Umschalten</span></button>
+                    <button class="btn btn-secondary" id="updatePreviewBtn"><i
+                            data-lucide="refresh-cw"></i><span>Vorschau</span></button>
+                    <button class="btn btn-secondary" id="saveInvoice"><i
+                            data-lucide="save"></i><span>Speichern</span></button>
+                    <button class="btn btn-secondary" id="printPDF"><i
+                            data-lucide="printer"></i><span>Drucken</span></button>
+                    <button class="btn btn-secondary" id="downloadImage" style="display: none;"><i
+                            data-lucide="image"></i><span>Als Bild</span></button>
+                    <button class="btn btn-primary" id="downloadPDF"><i data-lucide="download"></i><span>PDF
+                            Download</span></button>
                     <button class="btn btn-icon" id="reminderNotificationBtn" title="Erinnerungen">
                         <i data-lucide="bell"></i>
                         <span id="reminderCount" class="notification-badge">0</span>
@@ -53,7 +62,8 @@
                     <div id="reminderNotificationDropdown" class="notification-dropdown">
                         <div class="notification-header">
                             <h4>Aktuelle Erinnerungen</h4>
-                            <button class="btn btn-icon btn-sm" id="closeReminderDropdown"><i data-lucide="x"></i></button>
+                            <button class="btn btn-icon btn-sm" id="closeReminderDropdown"><i
+                                    data-lucide="x"></i></button>
                         </div>
                         <div id="notificationRemindersList" class="notification-list">
                             <!-- Reminders will be loaded here by JS -->
@@ -87,11 +97,7 @@
                             <h4><i data-lucide="receipt"></i> Einstellungen der Rechnung</h4>
                         </div>
                     </div>
-                    <div class="card settings-card nav-card" id="navCalculatorSettings">
-                        <div class="card-content">
-                            <h4><i data-lucide="percent-circle"></i> Einstellungen der Rechner</h4>
-                        </div>
-                    </div>
+
                     <div class="card settings-card nav-card" id="navCustomersSettings">
                         <div class="card-content">
                             <h4><i data-lucide="users"></i> Kundenverwaltung</h4>
@@ -101,92 +107,145 @@
 
                 <div id="pageHome" class="page" style="display: flex;">
                     <!-- Content for unpaid invoices will be rendered here by JS -->
-                                </div>
-                
-                                <div id="pageInvoices" class="page" style="display: none;">
-                                    <div class="card">
-                        <div class="card-header"><h3>Grunddaten</h3></div>
+                </div>
+
+                <div id="pageInvoices" class="page" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Grunddaten</h3>
+                        </div>
                         <div class="card-content grid-2">
                             <div class="form-group" style="grid-column: 1 / -1;">
                                 <label>Rechnungstyp</label>
                                 <div class="radio-group" id="invoiceTypeSelector">
-                                    <label><input type="radio" name="invoiceType" value="full" checked> Vollständige Rechnung (mit Flug)</label>
-                                    <label><input type="radio" name="invoiceType" value="simple"> Einfache Rechnung (ohne Flug)</label>
+                                    <label><input type="radio" name="invoiceType" value="full" checked> Vollständige
+                                        Rechnung (mit Flug)</label>
+                                    <label><input type="radio" name="invoiceType" value="simple"> Einfache Rechnung
+                                        (ohne Flug)</label>
                                 </div>
                             </div>
-                                            <div class="form-group"><label for="invoiceNumber">Rechnungsnummer</label><input id="invoiceNumber"></div>
-                                            <div class="form-group"><label for="invoiceDate">Rechnungsdatum</label><input type="date" id="invoiceDate"></div>
-                                            <div class="form-group">
-                                                <label for="to">An (Kunde)</label><textarea id="to" placeholder="Name und Adresse des Kunden">Max Mustermann
+                            <div class="form-group"><label for="invoiceNumber">Rechnungsnummer</label><input
+                                    id="invoiceNumber"></div>
+                            <div class="form-group"><label for="invoiceDate">Rechnungsdatum</label><input type="date"
+                                    id="invoiceDate"></div>
+                            <div class="form-group">
+                                <label for="to">An (Kunde)</label><textarea id="to"
+                                    placeholder="Name und Adresse des Kunden">Max Mustermann
                 Kundenstraße 2
                 54321 Kundenstadt</textarea>
-                                                <div class="grid-2" style="margin-top: 8px;">
-                                                    <div class="form-group"><label for="customerEmail">Kunden-E-Mail</label><input type="email" id="customerEmail" placeholder="max@beispiel.de"></div>
-                                                    <div class="form-group"><label for="customerPhone">Kunden-Telefon</label><input type="tel" id="customerPhone" placeholder="+49 123 45678"></div>
-                                                </div>
-                                                <button class="btn btn-text" id="selectCustomerBtn" style="margin-top: 8px;"><i data-lucide="user-search"></i>Kunde aus Datenbank</button>
-                                            </div>
-                                            <div class="form-group" style="grid-column: 1 / -1;"><label>Logo hochladen</label><input type="file" id="logoInput" accept="image/*"></div>
-                                            <div class="form-group" style="grid-column: 1 / -1;">
-                                                <label for="paymentMethod">Zahlungsmethode</label>
-                                                <select id="paymentMethod">
-                                                    <option value="Überweisung">Überweisung</option>
-                                                    <option value="Barzahlung">Barzahlung</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                     <div class="card" id="passengersCard">
-                                        <div class="card-header"><h3>Passagiere</h3></div>
-                                        <div class="card-content">
-                                            <div class="table-wrapper">
-                                                <table id="passengerTable">
-                                                    <thead><tr><th>Name</th><th>Geburtsdatum</th><th></th></tr></thead>
-                                                    <tbody id="passengerBody"></tbody>
-                                                </table>
-                                            </div>
-                                            <div class="card-actions"><button class="btn btn-secondary" id="addPassenger"><i data-lucide="plus"></i>Passagier hinzufügen</button></div>
-                                        </div>
-                                    </div>
-                                    <div class="card" id="flightDetailsCard">
-                                        <div class="card-header"><h3>Flugdetails</h3></div>
-                                        <div class="card-content">
-                                            <h4>Hinflug</h4>
-                                            <div class="form-group"><label for="totalOutboundDuration">Gesamte Reisedauer (Hinflug)</label><input id="totalOutboundDuration" placeholder="Manuelle Eingabe, z.B. 14h 30m"></div>
-                                            <div class="table-wrapper">
-                                                <table id="outboundTable">
-                                                    <thead><tr><th>Von</th><th>Nach</th><th>Abflug</th><th>Ankunft</th><th>Dauer</th><th></th></tr></thead>
-                                                    <tbody id="outboundBody"></tbody>
-                                                </table>
-                                            </div>
-                                            <div class="card-actions">
-                                                <button class="btn btn-secondary" id="addOutbound"><i data-lucide="plus"></i>Flugabschnitt hinzufügen</button>
-                                                <div id="returnSectionContainer"><button class="btn btn-text" id="addReturnSection"><i data-lucide="corner-down-left"></i>Rückflug-Option hinzufügen</button></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                     <div class="card">
-                                        <div class="card-header"><h3>Leistungen</h3></div>
-                                        <div class="card-content">
-                                            <div class="table-wrapper">
-                                                <table id="itemsTable">
-                                                    <thead><tr><th>Option</th><th>Beschreibung</th><th class="center">Menge</th><th class="center">Preis</th><th class="center">Gesamt</th><th></th></tr></thead>
-                                                    <tbody id="itemsBody"></tbody>
-                                                </table>
-                                            </div>
-                                            <div class="card-actions quick-add">
-                                                <button class="btn btn-secondary" id="addItem"><i data-lucide="plus"></i>Leistung hinzufügen</button>
-                                                <select id="quickOption"><option value="">--Schnellauswahl--</option><option data-desc="Hotel 7 Nächte">Hotel 7 Nächte</option><option data-desc="Flugticket">Flugticket</option><option data-desc="Gepäck">Gepäck</option><option data-desc="Sonstige">Sonstige</option></select>
-                                                <button class="btn btn-primary" id="addQuick">OK</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="preview-pane" style="display: none;">
-                                        <div id="preview" class="pdf-preview">
-                                            <!-- PDF content will be rendered here -->
-                                        </div>
-                                    </div>
+                                <div class="grid-2" style="margin-top: 8px;">
+                                    <div class="form-group"><label for="customerEmail">Kunden-E-Mail</label><input
+                                            type="email" id="customerEmail" placeholder="max@beispiel.de"></div>
+                                    <div class="form-group"><label for="customerPhone">Kunden-Telefon</label><input
+                                            type="tel" id="customerPhone" placeholder="+49 123 45678"></div>
                                 </div>
+                                <button class="btn btn-text" id="selectCustomerBtn" style="margin-top: 8px;"><i
+                                        data-lucide="user-search"></i>Kunde aus Datenbank</button>
+                            </div>
+                            <div class="form-group" style="grid-column: 1 / -1;"><label>Logo hochladen</label><input
+                                    type="file" id="logoInput" accept="image/*"></div>
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="paymentMethod">Zahlungsmethode</label>
+                                <select id="paymentMethod">
+                                    <option value="Überweisung">Überweisung</option>
+                                    <option value="Barzahlung">Barzahlung</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" id="passengersCard">
+                        <div class="card-header">
+                            <h3>Passagiere</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="table-wrapper">
+                                <table id="passengerTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Geburtsdatum</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="passengerBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="card-actions"><button class="btn btn-secondary" id="addPassenger"><i
+                                        data-lucide="plus"></i>Passagier hinzufügen</button></div>
+                        </div>
+                    </div>
+                    <div class="card" id="flightDetailsCard">
+                        <div class="card-header">
+                            <h3>Flugdetails</h3>
+                        </div>
+                        <div class="card-content">
+                            <h4>Hinflug</h4>
+                            <div class="form-group"><label for="totalOutboundDuration">Gesamte Reisedauer
+                                    (Hinflug)</label><input id="totalOutboundDuration"
+                                    placeholder="Manuelle Eingabe, z.B. 14h 30m"></div>
+                            <div class="table-wrapper">
+                                <table id="outboundTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Von</th>
+                                            <th>Nach</th>
+                                            <th>Abflug</th>
+                                            <th>Ankunft</th>
+                                            <th>Dauer</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="outboundBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-secondary" id="addOutbound"><i
+                                        data-lucide="plus"></i>Flugabschnitt hinzufügen</button>
+                                <div id="returnSectionContainer"><button class="btn btn-text" id="addReturnSection"><i
+                                            data-lucide="corner-down-left"></i>Rückflug-Option hinzufügen</button></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Leistungen</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="table-wrapper">
+                                <table id="itemsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Option</th>
+                                            <th>Beschreibung</th>
+                                            <th class="center">Menge</th>
+                                            <th class="center">Preis</th>
+                                            <th class="center">Gesamt</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemsBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="card-actions quick-add">
+                                <button class="btn btn-secondary" id="addItem"><i data-lucide="plus"></i>Leistung
+                                    hinzufügen</button>
+                                <select id="quickOption">
+                                    <option value="">--Schnellauswahl--</option>
+                                    <option data-desc="Hotel 7 Nächte">Hotel 7 Nächte</option>
+                                    <option data-desc="Flugticket">Flugticket</option>
+                                    <option data-desc="Gepäck">Gepäck</option>
+                                    <option data-desc="Sonstige">Sonstige</option>
+                                </select>
+                                <button class="btn btn-primary" id="addQuick">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="preview-pane" style="display: none;">
+                        <div id="preview" class="pdf-preview">
+                            <!-- PDF content will be rendered here -->
+                        </div>
+                    </div>
+                </div>
 
                 <div id="pageSavedInvoices" class="page" style="display: none;">
                     <div class="summary-stats">
@@ -205,17 +264,42 @@
                     </div>
                     <div class="card">
                         <div class="invoice-controls">
-                           <div class="form-group search-group">
+                            <div class="form-group search-group">
                                 <i data-lucide="search"></i>
                                 <input id="searchInput" placeholder="Kunde oder Rechnungsnr. suchen...">
                             </div>
-                            <div class="form-group"><label for="periodFilter">Zeitraum</label><select id="periodFilter"><option value="all">Gesamt</option><option value="year">Dieses Jahr</option><option value="month">Dieser Monat</option><option value="day">Heute</option></select></div>
-                            <div class="form-group"><label for="statusFilter">Status</label><select id="statusFilter"><option value="all">Alle</option><option value="Bezahlt">Bezahlt</option><option value="Unbezahlt">Unbezahlt</option></select></div>
-                            <div class="form-group"><label for="sortInvoices">Sortieren nach</label><select id="sortInvoices"><option value="date_desc">Datum (Neuste)</option><option value="date_asc">Datum (Älteste)</option><option value="amount_desc">Betrag (Absteigend)</option><option value="amount_asc">Betrag (Aufsteigend)</option><option value="name_asc">Kunde (A-Z)</option></select></div>
+                            <div class="form-group"><label for="periodFilter">Zeitraum</label><select id="periodFilter">
+                                    <option value="all">Gesamt</option>
+                                    <option value="year">Dieses Jahr</option>
+                                    <option value="month">Dieser Monat</option>
+                                    <option value="day">Heute</option>
+                                </select></div>
+                            <div class="form-group"><label for="statusFilter">Status</label><select id="statusFilter">
+                                    <option value="all">Alle</option>
+                                    <option value="Bezahlt">Bezahlt</option>
+                                    <option value="Unbezahlt">Unbezahlt</option>
+                                </select></div>
+                            <div class="form-group"><label for="sortInvoices">Sortieren nach</label><select
+                                    id="sortInvoices">
+                                    <option value="date_desc">Datum (Neuste)</option>
+                                    <option value="date_asc">Datum (Älteste)</option>
+                                    <option value="amount_desc">Betrag (Absteigend)</option>
+                                    <option value="amount_asc">Betrag (Aufsteigend)</option>
+                                    <option value="name_asc">Kunde (A-Z)</option>
+                                </select></div>
                         </div>
                         <div class="table-wrapper">
                             <table id="savedInvoicesTable">
-                                <thead><tr><th>Status</th><th>Rechnungsnr.</th><th>Datum</th><th>Kunde</th><th class="center">Betrag</th><th class="center">Aktionen</th></tr></thead>
+                                <thead>
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Rechnungsnr.</th>
+                                        <th>Datum</th>
+                                        <th>Kunde</th>
+                                        <th class="center">Betrag</th>
+                                        <th class="center">Aktionen</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="savedInvoicesBody"></tbody>
                             </table>
                         </div>
@@ -224,7 +308,9 @@
 
                 <div id="pageCustomers" class="page" style="display: none;">
                     <div class="card">
-                        <div class="card-header"><h3>Neuen Kunden anlegen / Bearbeiten</h3></div>
+                        <div class="card-header">
+                            <h3>Neuen Kunden anlegen / Bearbeiten</h3>
+                        </div>
                         <form id="customerForm" class="card-content">
                             <input type="hidden" id="customerId">
                             <div class="grid-2">
@@ -234,20 +320,25 @@
                                 <div class="form-group"><label>E-Mail</label><input type="email" id="custEmail"></div>
                             </div>
                             <div class="form-group"><label>Geburtsdatum</label><input type="date" id="custDob"></div>
-                             <div class="grid-2">
+                            <div class="grid-2">
                                 <div class="form-group"><label>Reisepassnummer</label><input id="custPassportNum"></div>
-                                <div class="form-group"><label>Ablaufdatum Reisepass</label><input type="date" id="custPassportExp"></div>
+                                <div class="form-group"><label>Ablaufdatum Reisepass</label><input type="date"
+                                        id="custPassportExp"></div>
                             </div>
                             <div class="card-actions">
-                                <button type="submit" class="btn btn-primary"><i data-lucide="save"></i>Kunde speichern</button>
-                                <button type="button" id="clearCustomerForm" class="btn btn-secondary"><i data-lucide="delete"></i>Formular leeren</button>
+                                <button type="submit" class="btn btn-primary"><i data-lucide="save"></i>Kunde
+                                    speichern</button>
+                                <button type="button" id="clearCustomerForm" class="btn btn-secondary"><i
+                                        data-lucide="delete"></i>Formular leeren</button>
                             </div>
                         </form>
                     </div>
                     <div class="card">
-                        <div class="card-header"><h3>Gespeicherte Kunden</h3></div>
+                        <div class="card-header">
+                            <h3>Gespeicherte Kunden</h3>
+                        </div>
                         <div class="card-content">
-                           <div class="form-group search-group">
+                            <div class="form-group search-group">
                                 <i data-lucide="search"></i>
                                 <input id="customerSearch" placeholder="Kunden suchen...">
                             </div>
@@ -258,12 +349,15 @@
 
                 <div id="pageReminders" class="page" style="display: none;">
                     <div class="card">
-                        <div class="card-header"><h3>Neuer Eintrag</h3></div>
+                        <div class="card-header">
+                            <h3>Neuer Eintrag</h3>
+                        </div>
                         <div class="card-content">
                             <div class="form-group">
                                 <label>Eintragstyp</label>
                                 <div class="radio-group">
-                                    <label><input type="radio" name="entryType" value="Erinnerung" checked> Erinnerung</label>
+                                    <label><input type="radio" name="entryType" value="Erinnerung" checked>
+                                        Erinnerung</label>
                                     <label><input type="radio" name="entryType" value="Aufgabe"> Aufgabe</label>
                                 </div>
                             </div>
@@ -273,7 +367,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="reminderNote">Notiz</label>
-                                <textarea id="reminderNote" placeholder="Zusätzliche Details oder Anweisungen" rows="3"></textarea>
+                                <textarea id="reminderNote" placeholder="Zusätzliche Details oder Anweisungen"
+                                    rows="3"></textarea>
                             </div>
                             <div class="grid-2">
                                 <div class="form-group">
@@ -291,17 +386,22 @@
                                     <!-- Dynamische Benachrichtigungsregeln werden hier eingefügt -->
                                 </div>
                                 <div class="card-actions" style="margin-top: 0;">
-                                    <button class="btn btn-secondary" id="addNotificationRuleBtn"><i data-lucide="bell-plus"></i>Benachrichtigung hinzufügen</button>
+                                    <button class="btn btn-secondary" id="addNotificationRuleBtn"><i
+                                            data-lucide="bell-plus"></i>Benachrichtigung hinzufügen</button>
                                 </div>
                             </fieldset>
                             <div class="card-actions">
-                                <button class="btn btn-primary" id="addReminderBtn"><i data-lucide="plus"></i><span>Eintrag hinzufügen</span></button>
-                                <button class="btn btn-text" id="cancelEditReminderBtn" style="display: none;"><i data-lucide="x"></i>Abbrechen</button>
+                                <button class="btn btn-primary" id="addReminderBtn"><i
+                                        data-lucide="plus"></i><span>Eintrag hinzufügen</span></button>
+                                <button class="btn btn-text" id="cancelEditReminderBtn" style="display: none;"><i
+                                        data-lucide="x"></i>Abbrechen</button>
                             </div>
                         </div>
                     </div>
                     <div class="card">
-                        <div class="card-header"><h3>Meine Einträge</h3></div>
+                        <div class="card-header">
+                            <h3>Meine Einträge</h3>
+                        </div>
                         <div class="card-content">
                             <div id="remindersList" class="customer-list">
                                 <!-- Reminders will be rendered here -->
@@ -310,58 +410,24 @@
                     </div>
                 </div>
 
-                <div id="pageCalculator" class="page" style="display: none;">
-                    <div class="card calculator-card">
-                        <div class="card-content">
-                            <div class="calculator-input-wrapper">
-                                <label for="calcInput">Zahl eingeben</label>
-                                <input type="number" id="calcInput" placeholder="0">
-                                <button id="clearCalcInput" class="btn btn-icon danger" style="display: none;" title="Eingabe löschen">
-                                    <i data-lucide="trash-2"></i>
-                                </button>
-                            </div>
 
-                            <div id="calcResultWrapper" class="calculator-result-wrapper" style="display: none;">
-                                <h4>Endergebnis</h4>
-                                <div class="result-value-container">
-                                    <span id="calcResult">0.00</span>
-                                    <button id="copyCalcResult" class="btn btn-icon" title="Ergebnis kopieren">
-                                        <i data-lucide="copy"></i>
-                                    </button>
-                                </div>
-                                <small id="calcPercentageNote"></small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div id="pageCalculatorSettings" class="page" style="display: none;">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Prozentsatzeinstellungen</h3>
-                        </div>
-                        <div class="card-content">
-                            <div id="percentageSettingsGrid" class="percentage-grid">
-                                <!-- JS will generate this -->
-                            </div>
-                        </div>
-                        <div class="card-actions">
-                            <button id="resetPercentages" class="btn btn-secondary"><i data-lucide="rotate-cw"></i>Werte zurücksetzen</button>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- New page for Invoice Settings -->
                 <div id="pageInvoiceSettings" class="page" style="display: none;">
                     <div class="card">
-                        <div class="card-header"><h3>Notizen & Zahlungsinformationen</h3></div>
+                        <div class="card-header">
+                            <h3>Notizen & Zahlungsinformationen</h3>
+                        </div>
                         <div class="card-content">
                             <div class="form-group"><label for="from">Von (Reisebüro)</label><textarea id="from">Reisebüro Urlaub
 Salim Al Ahmad
 Hummelsbütteler Markt 19
 22339 Hamburg</textarea></div>
-                            <div class="form-group"><label for="note">Notiz</label><textarea id="note" rows="3">Vielen Dank für Ihre Buchung!</textarea></div>
-                            
+                            <div class="form-group"><label for="note">Notiz</label><textarea id="note"
+                                    rows="3">Vielen Dank für Ihre Buchung!</textarea></div>
+
                             <div class="form-group" id="bankDetails">
                                 <label for="payment">Zahlungsinformationen (für Überweisung)</label>
                                 <textarea id="payment" rows="6">Bitte überweisen Sie den Betrag innerhalt von 14 Tagen auf folgendes Konto:
@@ -382,31 +448,43 @@ Verwendungszweck: Rechnungsnummer</textarea>
                         </div>
                     </div>
                     <div class="card">
-                        <div class="card-header"><h3>Branding & Design (für PDF)</h3></div>
+                        <div class="card-header">
+                            <h3>Branding & Design (für PDF)</h3>
+                        </div>
                         <div class="card-content">
-                             <div class="grid-2">
-                                <div class="form-group"><label>Farbe der Überschriften</label><input type="color" id="headingColor" value="#556B2F"></div>
+                            <div class="grid-2">
+                                <div class="form-group"><label>Farbe der Überschriften</label><input type="color"
+                                        id="headingColor" value="#556B2F"></div>
                             </div>
                             <fieldset>
                                 <legend>Logo als Seitenhintergrund</legend>
-                                <label class="inline-label"><input type="checkbox" id="bgToggle"> Als Wasserzeichen-Hintergrund verwenden</label>
-                                <div class="form-group"><label>Größe (%)</label><input type="range" id="bgSize" min="10" max="200" value="100"></div>
-                                <div class="form-group"><label>Deckkraft</label><input type="range" id="bgOpacity" min="0" max="1" step="0.01" value="0.15"></div>
+                                <label class="inline-label"><input type="checkbox" id="bgToggle"> Als
+                                    Wasserzeichen-Hintergrund verwenden</label>
+                                <div class="form-group"><label>Größe (%)</label><input type="range" id="bgSize" min="10"
+                                        max="200" value="100"></div>
+                                <div class="form-group"><label>Deckkraft</label><input type="range" id="bgOpacity"
+                                        min="0" max="1" step="0.01" value="0.15"></div>
                             </fieldset>
-                             <fieldset>
+                            <fieldset>
                                 <legend>Farbiges Overlay</legend>
                                 <div class="grid-2">
-                                    <div class="form-group"><label>Overlay-Farbe</label><input type="color" id="bgColor" value="#ffffff"></div>
-                                    <div class="form-group"><label>Deckkraft Overlay</label><input type="range" id="bgColorOpacity" min="0" max="1" step="0.01" value="0.85"></div>
+                                    <div class="form-group"><label>Overlay-Farbe</label><input type="color" id="bgColor"
+                                            value="#ffffff"></div>
+                                    <div class="form-group"><label>Deckkraft Overlay</label><input type="range"
+                                            id="bgColorOpacity" min="0" max="1" step="0.01" value="0.85"></div>
                                 </div>
-                                <div class="card-actions"><button class="btn btn-text" id="clearBg">Hintergrund zurücksetzen</button></div>
+                                <div class="card-actions"><button class="btn btn-text" id="clearBg">Hintergrund
+                                        zurücksetzen</button></div>
                             </fieldset>
                         </div>
                     </div>
                     <div class="card">
-                        <div class="card-header"><h3>Mehrwertsteuer (VAT) Einstellungen</h3></div>
+                        <div class="card-header">
+                            <h3>Mehrwertsteuer (VAT) Einstellungen</h3>
+                        </div>
                         <div class="card-content">
-                            <label class="inline-label"><input type="checkbox" id="enableVat"> Mehrwertsteuer berechnen</label>
+                            <label class="inline-label"><input type="checkbox" id="enableVat"> Mehrwertsteuer
+                                berechnen</label>
                             <div class="form-group">
                                 <label for="vatRate">Mehrwertsteuersatz (%)</label>
                                 <input type="number" id="vatRate" value="19" min="0" step="0.1">
@@ -414,24 +492,113 @@ Verwendungszweck: Rechnungsnummer</textarea>
                         </div>
                     </div>
                     <div class="card">
-                        <div class="card-header"><h3>Seriennummer-Einstellungen</h3></div>
+                        <div class="card-header">
+                            <h3>Seriennummer-Einstellungen</h3>
+                        </div>
                         <div class="card-content">
-                            <label class="inline-label"><input type="checkbox" id="enableSequence" checked> Automatische Seriennummer</label>
+                            <label class="inline-label"><input type="checkbox" id="enableSequence" checked> Automatische
+                                Seriennummer</label>
                             <div class="grid-2">
-                                <div class="form-group"><label>Präfix</label><input id="sequencePrefix" value="UR2025-"></div>
-                                <div class="form-group"><label>Startnummer</label><input type="number" id="sequenceStart" value="1" min="1"></div>
+                                <div class="form-group"><label>Präfix</label><input id="sequencePrefix" value="UR2025-">
+                                </div>
+                                <div class="form-group"><label>Startnummer</label><input type="number"
+                                        id="sequenceStart" value="1" min="1"></div>
                             </div>
                         </div>
-                        <div class="card-actions"><button class="btn btn-text" id="resetSequence">Sequenz zurücksetzen</button></div>
+                        <div class="card-actions"><button class="btn btn-text" id="resetSequence">Sequenz
+                                zurücksetzen</button></div>
                     </div>
                     <div class="card-actions" style="justify-content: flex-end;">
-                        <button class="btn btn-primary" id="saveInvoiceSettings"><i data-lucide="save"></i>Einstellungen speichern</button>
+                        <button class="btn btn-primary" id="saveInvoiceSettings"><i data-lucide="save"></i>Einstellungen
+                            speichern</button>
                     </div>
                 </div>
 
             </div>
-            
+
         </main>
+
+        <!-- New Page: Travel Plan Specific -->
+        <div id="pageTravelPlan" class="page" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Reiseplan erstellen</h3>
+                </div>
+                <div class="card-content">
+                    <h4>Flugdetails</h4>
+                    <div class="table-wrapper">
+                        <table id="travelPlanFlightsTable">
+                            <thead>
+                                <tr>
+                                    <th>Airline</th>
+                                    <th>Flugnr.</th>
+                                    <th>Von (Mitar)</th>
+                                    <th>Nach (Mitar)</th>
+                                    <th>Abflug</th>
+                                    <th>Ankunft</th>
+                                    <th>Dauer</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="travelPlanFlightsBody">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-secondary" id="addTravelPlanFlight"><i data-lucide="plus"></i>Flug
+                            hinzufügen</button>
+                    </div>
+
+                    <h4 style="margin-top: 1.5rem;">Reisende</h4>
+                    <div class="table-wrapper">
+                        <table id="travelPlanPassengersTable">
+                            <thead>
+                                <tr>
+                                    <th>Name des Reisenden</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="travelPlanPassengersBody">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-secondary" id="addTravelPlanPassenger"><i
+                                data-lucide="plus"></i>Reisenden hinzufügen</button>
+                    </div>
+
+                    <h4 style="margin-top: 1.5rem;">Zusammenfassung</h4>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Hinflug Gesamtdauer</label>
+                            <input id="tpTotalDurationOutbound" placeholder="z.B. 7h 0m">
+                        </div>
+                        <div class="form-group">
+                            <label>Rückflug Gesamtdauer (Optional)</label>
+                            <input id="tpTotalDurationReturn" placeholder="z.B. 8h 15m">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions"
+                    style="justify-content: space-between; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);">* Nur als Bild verfügbar</div>
+                    <button class="btn btn-primary" id="downloadTravelPlanImage"><i data-lucide="image"></i>Als Bild
+                        speichern</button>
+                </div>
+            </div>
+
+            <!-- Dedicated Preview Container for Travel Plan -->
+            <!-- We reuse the style class but keep it inside the page flow or separate? 
+                 The request implies a "settings page", and usually we see a preview. 
+                 Let's put a preview container here too or use the main one? 
+                 Main one is global. Let's use a local preview container to make it "radically" standalone. 
+            -->
+            <div class="preview-pane" id="travelPlanPreviewPane" style="display: block; margin-top: 1rem;">
+                <div id="travelPlanPreview" class="pdf-preview"></div>
+            </div>
+        </div>
         <div class="preview-pane" style="display: none;">
             <div id="preview" class="pdf-preview">
                 <!-- PDF content will be rendered here -->
@@ -449,11 +616,13 @@ Verwendungszweck: Rechnungsnummer</textarea>
                 <h4><i data-lucide="file-plus"></i> Neue Rechnung erstellen</h4>
             </div>
         </div>
-        <div class="card nav-card" id="dropdownCalculator">
+
+        <div class="card nav-card" id="dropdownTravelPlan">
             <div class="card-content">
-                <h4><i data-lucide="percent-circle"></i> Rechner</h4>
+                <h4><i data-lucide="plane"></i> Reiseplan erstellen</h4>
             </div>
         </div>
+
         <div class="card nav-card" id="dropdownCustomers">
             <div class="card-content">
                 <h4><i data-lucide="users"></i> Kundenverwaltung</h4>
@@ -463,9 +632,9 @@ Verwendungszweck: Rechnungsnummer</textarea>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
+
     <script src="app.js"></script>
-    
+
     <script>
         // Icons initialisieren
         lucide.createIcons();
@@ -473,13 +642,13 @@ Verwendungszweck: Rechnungsnummer</textarea>
         // UI-Logik für Navigation
         const navLinks = document.querySelectorAll('.nav-link');
         const pageTitle = document.getElementById('page-title');
-        
+
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 navLinks.forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
-                
+
                 const titleText = e.currentTarget.querySelector('span').textContent.trim();
                 pageTitle.textContent = titleText;
                 lucide.createIcons(); // Re-render icons on navigation
@@ -487,4 +656,5 @@ Verwendungszweck: Rechnungsnummer</textarea>
         });
     </script>
 </body>
+
 </html>
