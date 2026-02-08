@@ -2210,3 +2210,89 @@ body.dark-mode .settings-card {
    (ticket-like) layout, even on mobile devices. This guarantees that the generated image 
    maintains the professional design requested.
 */
+
+/* Travel Plan Baggage Styles */
+.tp-baggage-editor {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    align-items: center;
+}
+
+.tp-bag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background-color: var(--color-gray-100);
+    padding: 0.25rem 0.5rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    border: 1px solid var(--border-color);
+}
+
+.tp-bag-chip select,
+.tp-bag-chip input {
+    font-size: 0.8rem;
+    padding: 0 0.25rem;
+    border: none;
+    background: transparent;
+    width: auto;
+    color: var(--text-primary);
+}
+
+.tp-bag-chip .remove-bag {
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-danger-500);
+    cursor: pointer;
+}
+
+.tp-add-bag-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Travel Plan Preview Items */
+.tp-passenger-item {
+    display: flex;
+    flex-direction: column;
+    /* Stack name and bags */
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.tp-passenger-name {
+    font-weight: 600;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.tp-baggage-icons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.tp-bag-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background-color: rgba(255, 255, 255, 0.15);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #d4af37;
+    /* Gold */
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.tp-bag-icon i {
+    width: 14px;
+    height: 14px;
+}
