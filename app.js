@@ -167,7 +167,9 @@ function showPage(pageId) {
     if (pageReminders) pageReminders.style.display = 'none'; // Hide reminders
     if (pageSettings) pageSettings.style.display = 'none'; // Hide settings
     if (pageInvoiceSettings) pageInvoiceSettings.style.display = 'none'; // Hide invoice settings
-
+    if (pageTravelPlan) {
+        pageTravelPlan.style.display = 'none'; // Hide travel plan page
+    }
 
     // Show/hide invoice action buttons
     const isInvoicePage = pageId === 'invoices' || (!pageId && pageInvoices);
@@ -2562,21 +2564,80 @@ if (addTpPassengerBtn) {
 
 function addTravelPlanPassengerRow() {
     const row = document.createElement('tr');
+
+    // Create Baggage Chip
+    const createBagChip = (type, weight = '') => {
+        const chip = document.createElement('div');
+        chip.className = 'tp-bag-chip';
+        chip.dataset.type = type;
+
+        const label = type === 'klein' ? 'Kleine Tasche' : type === 'hand' ? 'Handgepäck' : 'Aufgabegepäck';
+
+        let weightInputHtml = '';
+        if (type !== 'klein') {
+            weightInputHtml = `<input type="number" class="tp-bag-weight" value="${weight}" placeholder="kg" style="width: 40px;"> kg`;
+        } else {
+            weightInputHtml = `<input type="text" class="tp-bag-weight" value="${weight}" placeholder="kg/Inc" style="width: 50px;">`;
+        }
+
+        chip.innerHTML = `
+            <span>${label}</span>
+            ${weightInputHtml}
+            <span class="remove-bag"><i data-lucide="x"></i></span>
+        `;
+
+        chip.querySelector('.remove-bag').onclick = () => {
+            chip.remove();
+            updateTravelPlanPreview();
+        };
+        chip.querySelector('input').addEventListener('input', updateTravelPlanPreview);
+
+        return chip;
+    };
+
     row.innerHTML = `
-        <td><input class="tp-res-name" placeholder="Vorname Nachname"></td>
+        <td>
+            <input class="tp-res-name" placeholder="Vorname Nachname">
+            <div class="tp-baggage-editor">
+                <!-- Bags go here -->
+            </div>
+            <div style="margin-top: 5px;">
+                 <button type="button" class="btn btn-secondary tp-add-bag-btn" data-type="hand">+ Handgepäck</button>
+                 <button type="button" class="btn btn-secondary tp-add-bag-btn" data-type="aufgabe">+ Aufgabegepäck</button>
+                 <button type="button" class="btn btn-secondary tp-add-bag-btn" data-type="klein">+ Kleine Tasche</button>
+            </div>
+        </td>
         <td class="actions-cell">
-             <button class="btn btn-icon danger remove-tp-row"><i data-lucide="trash-2"></i></button>
+             <button type="button" class="btn btn-icon danger remove-tp-row"><i data-lucide="trash-2"></i></button>
         </td>
     `;
+
+    const editor = row.querySelector('.tp-baggage-editor');
+    // Add default small bag
+    editor.appendChild(createBagChip('klein', ''));
+
     tpPassengersBody.appendChild(row);
     lucide.createIcons();
 
     // Attach listeners
-    row.querySelector('input').addEventListener('input', updateTravelPlanPreview);
-    row.querySelector('.remove-tp-row').onclick = () => {
+    row.querySelector('.tp-res-name').addEventListener('input', updateTravelPlanPreview);
+    row.querySelector('.remove-tp-row').onclick = (e) => {
+        e.preventDefault();
         row.remove();
         updateTravelPlanPreview();
     };
+
+    row.querySelectorAll('.tp-add-bag-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.preventDefault();
+            const type = btn.dataset.type;
+            const defaultWeight = type === 'hand' ? '8' : type === 'aufgabe' ? '23' : '';
+            editor.appendChild(createBagChip(type, defaultWeight));
+            lucide.createIcons();
+            updateTravelPlanPreview();
+        };
+    });
+
     updateTravelPlanPreview();
 }
 
@@ -2603,7 +2664,15 @@ function updateTravelPlanPreview() {
         };
     });
 
-    const passengers = [...tpPassengersBody.querySelectorAll('.tp-res-name')].map(i => i.value).filter(v => v);
+    const passengers = [...tpPassengersBody.querySelectorAll('tr')].map(row => {
+        const name = row.querySelector('.tp-res-name').value;
+        const bags = [...row.querySelectorAll('.tp-bag-chip')].map(chip => ({
+            type: chip.dataset.type,
+            weight: chip.querySelector('.tp-bag-weight').value
+        }));
+        return { name, bags };
+    }).filter(p => p.name);
+
     const totalDurationOut = tpTotalOutbound.value;
     const totalDurationRet = tpTotalReturn.value;
 
@@ -2678,9 +2747,48 @@ function updateTravelPlanPreview() {
 
     let passengerHtml = '';
     if (passengers.length > 0) {
+        const pListHtml = passengers.map(p => {
+            const bagsHtml = p.bags.map(b => {
+                let iconName = 'briefcase'; // default small
+                if (b.type === 'hand') iconName = 'luggage';
+                if (b.type === 'aufgabe') iconName = 'luggage'; // map to same icon but maybe style differently?
+
+                // Lucide doesn't have 'luggage'. Let's use 'briefcase' for small, 'shopping-bag' or 'backpack' for hand, 'package' or custom?
+                // 'briefcase' -> Small
+                // 'backpack' -> Hand
+                // 'suitcase' -> Lucide has 'briefcase'. It does NOT have 'suitcase' or 'luggage' in older versions. 
+                // Let's check available icons or standard ones.
+                // 'briefcase' is safe. 'backpack' is safe. 'shopping-bag' is safe.
+                // Let's use:
+                // Klein: 'briefcase'
+                // Hand: 'backpack'
+                // Aufgabe: 'archive' or 'package'? Or just 'briefcase' for all with labels?
+                // Actually, lucide has 'luggage' in newer versions. If not, fallback.
+                // I will use 'briefcase' for all for safety but distinguish by text.
+                // Wait, user wants "beautiful small icons".
+                // Let's try:
+                // Klein: 'shopping-bag' (looks like a tote/purse)
+                // Hand: 'backpack'
+                // Aufgabe: 'briefcase' (looks like a suitcase often)
+
+                if (b.type === 'klein') iconName = 'shopping-bag';
+                else if (b.type === 'hand') iconName = 'backpack';
+                else iconName = 'briefcase';
+
+                const weightText = b.weight ? `${b.weight} kg` : '';
+                return `<span class="tp-bag-icon"><i data-lucide="${iconName}"></i> ${weightText}</span>`;
+            }).join('');
+
+            return `
+             <div class="tp-passenger-item">
+                 <div class="tp-passenger-name">${escapeHtml(p.name)}</div>
+                 <div class="tp-baggage-icons">${bagsHtml}</div>
+             </div>`;
+        }).join('');
+
         passengerHtml = `<div class="travel-passengers">
             <div class="tp-label">Reisende:</div>
-            <div class="tp-list">${passengers.map(p => escapeHtml(p)).join(', ')}</div>
+            <div class="tp-list" style="display:block;">${pListHtml}</div>
         </div>`;
     }
 
