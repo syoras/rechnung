@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // --- Grundfunktionen ---
-function format(n){return Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})}
-function toNum(v){return parseFloat(String(v).replace(",", "."))||0}
+function format(n) { return Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
+function toNum(v) { return parseFloat(String(v).replace(",", ".")) || 0 }
 
 // Toast Notification Function
 function showToast(message, type = 'info', duration = 3000) {
@@ -51,7 +51,7 @@ function showToast(message, type = 'info', duration = 3000) {
     toastContainer.appendChild(toast);
 
     // Force reflow to enable transition
-    void toast.offsetWidth; 
+    void toast.offsetWidth;
     toast.classList.add('show');
 
     setTimeout(() => {
@@ -60,19 +60,74 @@ function showToast(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
+const downloadImageBtn = document.getElementById('downloadImage');
+
 // --- INVOICE TYPE SWITCHER ---
 function updateInvoiceFormDisplay() {
     const invoiceTypeSelector = document.getElementById('invoiceTypeSelector');
     if (!invoiceTypeSelector) return; // Only run on invoice page
-    
+
     const passengersCard = document.getElementById('passengersCard');
     const flightDetailsCard = document.getElementById('flightDetailsCard');
     const selectedType = document.querySelector('input[name="invoiceType"]:checked').value;
 
     const isSimple = selectedType === 'simple';
-    // Use 'block' as it's the default for divs, or 'flex' if they have specific display styles
+    const isTravelPlan = selectedType === 'travel_plan';
+
+    // Show/Hide cards based on type
     if (passengersCard) passengersCard.style.display = isSimple ? 'none' : 'block';
     if (flightDetailsCard) flightDetailsCard.style.display = isSimple ? 'none' : 'block';
+
+    // Hide Items/Payment/Settings parts for Travel Plan
+    const itemsCard = document.getElementById('itemsTable')?.closest('.card');
+    if (itemsCard) itemsCard.style.display = isTravelPlan ? 'none' : 'block';
+
+    // Hide Invoice Settings (Payment, Note etc) for Travel Plan if they are in the main flow
+    const paymentMethodGroup = document.getElementById('paymentMethod')?.closest('.form-group');
+    if (paymentMethodGroup) paymentMethodGroup.style.display = isTravelPlan ? 'none' : 'flex';
+
+    const invoiceNumberGroup = document.getElementById('invoiceNumber')?.closest('.form-group');
+    if (invoiceNumberGroup) invoiceNumberGroup.querySelector('label').textContent = isTravelPlan ? 'Referenznummer' : 'Rechnungsnummer';
+
+    // Show/Hide Image Button
+    if (downloadImageBtn) {
+        downloadImageBtn.style.display = isTravelPlan ? 'inline-flex' : 'none';
+    }
+    // PDF Button could be hidden or kept. Let's keep it as backup but prioritize Image for Travel Plan
+}
+
+
+if (downloadImageBtn) {
+    downloadImageBtn.onclick = async () => {
+        updatePreview();
+        const element = document.querySelector('.travel-plan-container') || document.getElementById('preview');
+        if (!element) return;
+
+        // Temporarily show preview if hidden
+        const previewPane = document.querySelector('.preview-pane');
+        const wasHidden = previewPane.style.display === 'none';
+        if (wasHidden) previewPane.style.display = 'flex';
+
+        await new Promise(resolve => setTimeout(resolve, 100)); // Wait for render
+
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 3, // High quality
+                useCORS: true,
+                backgroundColor: null
+            });
+
+            const link = document.createElement('a');
+            link.download = `Reiseplan_${document.getElementById('invoiceNumber').value || 'Draft'}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) {
+            console.error(err);
+            alert('Fehler beim Erstellen des Bildes');
+        } finally {
+            if (wasHidden) previewPane.style.display = 'none';
+        }
+    };
 }
 
 // --- SEITENNAVIGATION ---
@@ -80,16 +135,17 @@ const pageHome = document.getElementById('pageHome');
 const pageInvoices = document.getElementById('pageInvoices');
 const pageSavedInvoices = document.getElementById('pageSavedInvoices');
 const pageCustomers = document.getElementById('pageCustomers');
-const pageCalculator = document.getElementById('pageCalculator'); // New Calculator Page
+
 const pageReminders = document.getElementById('pageReminders'); // New Reminders Page
 const pageSettings = document.getElementById('pageSettings'); // New Settings Page
 const pageInvoiceSettings = document.getElementById('pageInvoiceSettings'); // New Invoice Settings Page
-const pageCalculatorSettings = document.getElementById('pageCalculatorSettings'); // New Calculator Settings Page
+const pageTravelPlan = document.getElementById('pageTravelPlan'); // New Travel Plan Page
+
 const navButtons = {
-  home: document.getElementById('navHome'),
-  saved: document.getElementById('navSavedInvoices'),
-  reminders: document.getElementById('navReminders'), // New Reminders Nav Button
-  settings: document.getElementById('navSettings'),
+    home: document.getElementById('navHome'),
+    saved: document.getElementById('navSavedInvoices'),
+    reminders: document.getElementById('navReminders'), // New Reminders Nav Button
+    settings: document.getElementById('navSettings'),
 };
 const settingsBtn = document.getElementById('settingsBtn');
 
@@ -102,30 +158,30 @@ const invoiceActionButtons = [
 ].filter(Boolean);
 
 function showPage(pageId) {
-  // Verstecke alle Seiten
-  if(pageHome) pageHome.style.display = 'none';
-  if(pageInvoices) pageInvoices.style.display = 'none';
-  if(pageSavedInvoices) pageSavedInvoices.style.display = 'none';
-  if(pageCustomers) pageCustomers.style.display = 'none';
-  if(pageCalculator) pageCalculator.style.display = 'none'; // Hide calculator
-  if(pageReminders) pageReminders.style.display = 'none'; // Hide reminders
-  if(pageSettings) pageSettings.style.display = 'none'; // Hide settings
-  if(pageInvoiceSettings) pageInvoiceSettings.style.display = 'none'; // Hide invoice settings
-  if(pageCalculatorSettings) pageCalculatorSettings.style.display = 'none'; // Hide calculator settings
+    // Verstecke alle Seiten
+    if (pageHome) pageHome.style.display = 'none';
+    if (pageInvoices) pageInvoices.style.display = 'none';
+    if (pageSavedInvoices) pageSavedInvoices.style.display = 'none';
+    if (pageCustomers) pageCustomers.style.display = 'none';
 
-  // Show/hide invoice action buttons
-  const isInvoicePage = pageId === 'invoices' || (!pageId && pageInvoices);
-  invoiceActionButtons.forEach(btn => {
-      btn.style.display = isInvoicePage ? 'inline-flex' : 'none';
-  });
+    if (pageReminders) pageReminders.style.display = 'none'; // Hide reminders
+    if (pageSettings) pageSettings.style.display = 'none'; // Hide settings
+    if (pageInvoiceSettings) pageInvoiceSettings.style.display = 'none'; // Hide invoice settings
 
-  // Zeige die ausgewählte Seite an
-  if (pageId === 'home' && pageHome) {
-    pageHome.style.display = 'block'; // Change to block to manage internal sections
-    const upcomingRemindersCount = getUpcomingRemindersCount();
-    const overdueInvoicesCount = getOverdueInvoicesCount();
 
-    pageHome.innerHTML = `
+    // Show/hide invoice action buttons
+    const isInvoicePage = pageId === 'invoices' || (!pageId && pageInvoices);
+    invoiceActionButtons.forEach(btn => {
+        btn.style.display = isInvoicePage ? 'inline-flex' : 'none';
+    });
+
+    // Zeige die ausgewählte Seite an
+    if (pageId === 'home' && pageHome) {
+        pageHome.style.display = 'block'; // Change to block to manage internal sections
+        const upcomingRemindersCount = getUpcomingRemindersCount();
+        const overdueInvoicesCount = getOverdueInvoicesCount();
+
+        pageHome.innerHTML = `
         <div class="summary-cards-container">
             <div class="card summary-card reminder-summary-card">
                 <div class="card-content">
@@ -159,36 +215,37 @@ function showPage(pageId) {
             <div class="home-grid"></div>
         </div>
     `;
-    renderUnpaidInvoices();
-    renderUpcomingReminders();
-    if (window.lucide) window.lucide.createIcons(); // Re-render icons for new cards
-  } else if (pageId === 'saved' && pageSavedInvoices) {
-    pageSavedInvoices.style.display = 'flex'; // Use flex for new layout
-    renderSavedInvoices();
-    const pageTitle = document.getElementById('page-title');
-    if (pageTitle) {
-        pageTitle.textContent = 'Analyse';
+        renderUnpaidInvoices();
+        renderUpcomingReminders();
+        if (window.lucide) window.lucide.createIcons(); // Re-render icons for new cards
+    } else if (pageId === 'saved' && pageSavedInvoices) {
+        pageSavedInvoices.style.display = 'flex'; // Use flex for new layout
+        renderSavedInvoices();
+        const pageTitle = document.getElementById('page-title');
+        if (pageTitle) {
+            pageTitle.textContent = 'Analyse';
+        }
+    } else if (pageId === 'customers' && pageCustomers) {
+        pageCustomers.style.display = 'flex'; // Use flex for new layout
+        renderCustomerList();
+
+    } else if (pageId === 'reminders' && pageReminders) {
+        pageReminders.style.display = 'flex'; // Show reminders
+        renderReminders(); // Render reminders when the page is shown
+    } else if (pageId === 'settings' && pageSettings) {
+        pageSettings.style.display = 'flex';
+    } else if (pageId === 'invoiceSettings' && pageInvoiceSettings) {
+        pageInvoiceSettings.style.display = 'flex';
+
+    } else if (pageId === 'travel_plan' && pageTravelPlan) {
+        pageTravelPlan.style.display = 'flex';
+        initTravelPlan();
+    } else { // Standardfall ist 'invoices'
+        if (pageInvoices) {
+            pageInvoices.style.display = 'flex'; // Use flex for new layout
+            updateInvoiceFormDisplay(); // Set initial form display for invoice type
+        }
     }
-  } else if (pageId === 'customers' && pageCustomers) {
-    pageCustomers.style.display = 'flex'; // Use flex for new layout
-    renderCustomerList();
-  } else if (pageId === 'calculator' && pageCalculator) {
-    pageCalculator.style.display = 'flex'; // Show calculator
-  } else if (pageId === 'reminders' && pageReminders) {
-    pageReminders.style.display = 'flex'; // Show reminders
-    renderReminders(); // Render reminders when the page is shown
-  } else if (pageId === 'settings' && pageSettings) {
-    pageSettings.style.display = 'flex';
-  } else if (pageId === 'invoiceSettings' && pageInvoiceSettings) {
-    pageInvoiceSettings.style.display = 'flex';
-  } else if (pageId === 'calculatorSettings' && pageCalculatorSettings) {
-    pageCalculatorSettings.style.display = 'flex';
-  } else { // Standardfall ist 'invoices'
-    if(pageInvoices) {
-        pageInvoices.style.display = 'flex'; // Use flex for new layout
-        updateInvoiceFormDisplay(); // Set initial form display for invoice type
-    }
-  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -201,11 +258,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-if(navButtons.home) navButtons.home.onclick = () => showPage('home');
-if(navButtons.saved) navButtons.saved.onclick = () => showPage('saved');
-if(navButtons.reminders) navButtons.reminders.onclick = () => showPage('reminders'); // New event listener
+if (navButtons.home) navButtons.home.onclick = () => showPage('home');
+if (navButtons.saved) navButtons.saved.onclick = () => showPage('saved');
+if (navButtons.reminders) navButtons.reminders.onclick = () => showPage('reminders'); // New event listener
 
-if(navButtons.settings) {
+if (navButtons.settings) {
     navButtons.settings.onclick = () => {
         showPage('settings');
         const pageTitle = document.getElementById('page-title');
@@ -218,7 +275,7 @@ if(navButtons.settings) {
 }
 
 const navInvoiceSettings = document.getElementById('navInvoiceSettings');
-if(navInvoiceSettings) {
+if (navInvoiceSettings) {
     navInvoiceSettings.onclick = () => {
         showPage('invoiceSettings');
         const pageTitle = document.getElementById('page-title');
@@ -230,21 +287,10 @@ if(navInvoiceSettings) {
     };
 }
 
-const navCalculatorSettings = document.getElementById('navCalculatorSettings');
-if(navCalculatorSettings) {
-    navCalculatorSettings.onclick = () => {
-        showPage('calculatorSettings');
-        const pageTitle = document.getElementById('page-title');
-        if (pageTitle) {
-            pageTitle.textContent = 'Einstellungen der Rechner';
-        }
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(l => l.classList.remove('active'));
-    };
-}
+
 
 const navCustomersSettings = document.getElementById('navCustomersSettings');
-if(navCustomersSettings) {
+if (navCustomersSettings) {
     navCustomersSettings.onclick = () => {
         showPage('customers');
         const pageTitle = document.getElementById('page-title');
@@ -259,16 +305,15 @@ if(navCustomersSettings) {
 const fabNewInvoice = document.getElementById('fabNewInvoice');
 const fabDropdown = document.getElementById('fabDropdown');
 const dropdownNewInvoice = document.getElementById('dropdownNewInvoice');
-const dropdownCalculator = document.getElementById('dropdownCalculator');
 
-if(fabNewInvoice) {
+if (fabNewInvoice) {
     fabNewInvoice.onclick = (event) => {
         event.stopPropagation(); // Prevent the document click listener from immediately closing it
         fabDropdown.classList.toggle('show');
     };
 }
 
-if(dropdownNewInvoice) {
+if (dropdownNewInvoice) {
     dropdownNewInvoice.onclick = () => {
         showPage('invoices');
         const pageTitle = document.getElementById('page-title');
@@ -281,21 +326,10 @@ if(dropdownNewInvoice) {
     };
 }
 
-if(dropdownCalculator) {
-    dropdownCalculator.onclick = () => {
-        showPage('calculator');
-        const pageTitle = document.getElementById('page-title');
-        if (pageTitle) {
-            pageTitle.textContent = 'Rechner';
-        }
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(l => l.classList.remove('active'));
-        fabDropdown.classList.remove('show'); // Hide dropdown after selection
-    };
-}
+
 
 const dropdownCustomers = document.getElementById('dropdownCustomers');
-if(dropdownCustomers) {
+if (dropdownCustomers) {
     dropdownCustomers.onclick = () => {
         showPage('customers');
         const pageTitle = document.getElementById('page-title');
@@ -316,7 +350,7 @@ document.addEventListener('click', (event) => {
 });
 
 const selectCustomerBtn = document.getElementById('selectCustomerBtn');
-if(selectCustomerBtn) selectCustomerBtn.onclick = () => showPage('customers');
+if (selectCustomerBtn) selectCustomerBtn.onclick = () => showPage('customers');
 
 
 // Element-Referenzen
@@ -363,50 +397,50 @@ const totalRevenueUnpaidEl = document.getElementById('totalRevenueUnpaid');
 
 
 // Sequenz-Steuerung
-function getSequenceState(){
-  const s = JSON.parse(localStorage.getItem('invoiceSequence')||'null')
-  return s || {prefix: sequencePrefix.value || 'UR2025-', next: Number(sequenceStart.value)||1}
+function getSequenceState() {
+    const s = JSON.parse(localStorage.getItem('invoiceSequence') || 'null')
+    return s || { prefix: sequencePrefix.value || 'UR2025-', next: Number(sequenceStart.value) || 1 }
 }
-function saveSequenceState(state){ localStorage.setItem('invoiceSequence', JSON.stringify(state)) }
-function nextInvoiceNumber(){
-  const state = getSequenceState()
-  const num = state.next
-  state.next = num + 1
-  saveSequenceState(state)
-  return (state.prefix || 'U2025-') + num
+function saveSequenceState(state) { localStorage.setItem('invoiceSequence', JSON.stringify(state)) }
+function nextInvoiceNumber() {
+    const state = getSequenceState()
+    const num = state.next
+    state.next = num + 1
+    saveSequenceState(state)
+    return (state.prefix || 'U2025-') + num
 }
-if(resetSequenceBtn) resetSequenceBtn.onclick = ()=>{
-  const start = Number(sequenceStart.value) || 1
-  const pref = sequencePrefix.value || 'UR2025-'
-  saveSequenceState({prefix: pref, next: start})
-  alert('Sequenz auf ' + pref + start + ' gesetzt')
+if (resetSequenceBtn) resetSequenceBtn.onclick = () => {
+    const start = Number(sequenceStart.value) || 1
+    const pref = sequencePrefix.value || 'UR2025-'
+    saveSequenceState({ prefix: pref, next: start })
+    alert('Sequenz auf ' + pref + start + ' gesetzt')
 }
 
-// Initiales Rechnungsnummer- und Datumsverhalten
-;(function initInvoiceNumberAndDate(){
-  if (!invoiceNumberEl || !invoiceDateEl) return;
-  const seqState = JSON.parse(localStorage.getItem('invoiceSequence')||'null')
-  if(seqState) {
-    if(sequencePrefix) sequencePrefix.value = seqState.prefix || sequencePrefix.value;
-    if(sequenceStart) sequenceStart.value = seqState.next || sequenceStart.value;
-  }
-  if(enableSequence && enableSequence.checked){
-    invoiceNumberEl.value = nextInvoiceNumber()
-  } else {
-    invoiceNumberEl.value = "R-"+Date.now().toString().slice(-6)
-  }
-  invoiceDateEl.value = new Date().toISOString().split('T')[0]
-})()
+    // Initiales Rechnungsnummer- und Datumsverhalten
+    ; (function initInvoiceNumberAndDate() {
+        if (!invoiceNumberEl || !invoiceDateEl) return;
+        const seqState = JSON.parse(localStorage.getItem('invoiceSequence') || 'null')
+        if (seqState) {
+            if (sequencePrefix) sequencePrefix.value = seqState.prefix || sequencePrefix.value;
+            if (sequenceStart) sequenceStart.value = seqState.next || sequenceStart.value;
+        }
+        if (enableSequence && enableSequence.checked) {
+            invoiceNumberEl.value = nextInvoiceNumber()
+        } else {
+            invoiceNumberEl.value = "R-" + Date.now().toString().slice(-6)
+        }
+        invoiceDateEl.value = new Date().toISOString().split('T')[0]
+    })()
 
 // Logo handling
 let logoData = ''; // Global variable to store logo data
-if(logoInput) logoInput.addEventListener('change',function(e){
-  const file = e.target.files[0]
-  if(file){
-    const reader=new FileReader()
-    reader.onload=function(ev){ logoData=ev.target.result; applyBackgroundSettings(); updatePreview() }
-    reader.readAsDataURL(file)
-  }
+if (logoInput) logoInput.addEventListener('change', function (e) {
+    const file = e.target.files[0]
+    if (file) {
+        const reader = new FileReader()
+        reader.onload = function (ev) { logoData = ev.target.result; applyBackgroundSettings(); updatePreview() }
+        reader.readAsDataURL(file)
+    }
 })
 
 // --- Hintergrund & Design-Einstellungen ---
@@ -420,7 +454,7 @@ function applyBackgroundSettings() {
         const c = hexToRgb(hex);
         return `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`;
     }
-    
+
     if (logoData && bgToggle && bgToggle.checked) {
         previewEl.style.setProperty('--logo-image-url', `url(${logoData})`);
         previewEl.style.setProperty('--logo-size', `${bgSize.value}%`);
@@ -429,42 +463,42 @@ function applyBackgroundSettings() {
         previewEl.style.setProperty('--logo-image-url', 'none');
         previewEl.style.setProperty('--logo-opacity', '0');
     }
-    
+
     const overlayOpacity = parseFloat(bgColorOpacity.value) || 0;
     previewEl.style.backgroundColor = hexToRgba(bgColor.value, overlayOpacity);
     previewEl.style.setProperty('--heading-color', headingColorEl.value);
 }
 
 // Event Listeners für Design-Steuerung
-if(bgToggle) bgToggle.onchange = ()=>{ applyBackgroundSettings(); updatePreview() }
-if(bgSize) bgSize.oninput = ()=>{ applyBackgroundSettings() }
-if(bgOpacity) bgOpacity.oninput = ()=>{ applyBackgroundSettings() }
-if(bgColor) bgColor.oninput = ()=>{ applyBackgroundSettings() }
-if(bgColorOpacity) bgColorOpacity.oninput = ()=>{ applyBackgroundSettings() }
-if(headingColorEl) headingColorEl.oninput = ()=>{ applyBackgroundSettings(); updatePreview() };
+if (bgToggle) bgToggle.onchange = () => { applyBackgroundSettings(); updatePreview() }
+if (bgSize) bgSize.oninput = () => { applyBackgroundSettings() }
+if (bgOpacity) bgOpacity.oninput = () => { applyBackgroundSettings() }
+if (bgColor) bgColor.oninput = () => { applyBackgroundSettings() }
+if (bgColorOpacity) bgColorOpacity.oninput = () => { applyBackgroundSettings() }
+if (headingColorEl) headingColorEl.oninput = () => { applyBackgroundSettings(); updatePreview() };
 
-if(clearBgBtn) clearBgBtn.onclick = ()=>{
-  bgToggle.checked = false; bgSize.value = 100; bgOpacity.value = 0.15;
-  bgColor.value = '#ffffff'; bgColorOpacity.value = 0.85;
-  headingColorEl.value = '#556B2F';
-  applyBackgroundSettings(); updatePreview();
+if (clearBgBtn) clearBgBtn.onclick = () => {
+    bgToggle.checked = false; bgSize.value = 100; bgOpacity.value = 0.15;
+    bgColor.value = '#ffffff'; bgColorOpacity.value = 0.85;
+    headingColorEl.value = '#556B2F';
+    applyBackgroundSettings(); updatePreview();
 }
 
 // NEU: Helferfunktion für Zahlungsdetails
 function toggleBankDetails() {
-  const paymentMethodEl = document.getElementById('paymentMethod');
-  const bankDetailsEl = document.getElementById('bankDetails');
-  if (!paymentMethodEl || !bankDetailsEl) return;
-  
-  if (paymentMethodEl.value === 'Überweisung') {
-    bankDetailsEl.style.display = 'flex'; // 'flex' because form-group is display: flex
-  } else {
-    bankDetailsEl.style.display = 'none';
-  }
+    const paymentMethodEl = document.getElementById('paymentMethod');
+    const bankDetailsEl = document.getElementById('bankDetails');
+    if (!paymentMethodEl || !bankDetailsEl) return;
+
+    if (paymentMethodEl.value === 'Überweisung') {
+        bankDetailsEl.style.display = 'flex'; // 'flex' because form-group is display: flex
+    } else {
+        bankDetailsEl.style.display = 'none';
+    }
 }
 
 // NEU: Event-Listener für Zahlungsmethode
-if(document.getElementById('paymentMethod')) {
+if (document.getElementById('paymentMethod')) {
     document.getElementById('paymentMethod').onchange = () => {
         toggleBankDetails();
         updatePreview(); // Aktualisiere die Vorschau bei Änderung
@@ -499,7 +533,7 @@ function addBaggagePiece(listElement, type, weight = '23') {
         updatePreview();
     };
     div.querySelector('select').oninput = updatePreview;
-    
+
     listElement.appendChild(div);
     if (window.lucide) window.lucide.createIcons();
 }
@@ -515,11 +549,11 @@ function addPassenger(name = '', dob = '', baggage = null) {
         <td><input class="pdob" type="date" value="${dob}"></td>
         <td><button class="btn btn-icon danger remove"><i data-lucide="trash-2"></i></button></td>
     `;
-    
+
     // Zweiter TR für den Gepäck-Editor
     const trBaggage = document.createElement('tr');
     trBaggage.className = 'baggage-row';
-    
+
     const returnStyle = document.getElementById('returnSection') ? 'display: block;' : 'display: none;';
 
     trBaggage.innerHTML = `
@@ -575,11 +609,11 @@ function addPassenger(name = '', dob = '', baggage = null) {
 
     passengerBody.appendChild(tr);
     passengerBody.appendChild(trBaggage);
-    
+
     if (window.lucide) window.lucide.createIcons();
     updatePreview();
 }
-if(addPassengerBtn) addPassengerBtn.onclick=()=>addPassenger()
+if (addPassengerBtn) addPassengerBtn.onclick = () => addPassenger()
 
 // NEU: Helferfunktion zum Sammeln der Gepäckdaten eines Passagiers
 function collectBaggageData(passengerRow) {
@@ -620,39 +654,39 @@ function formatBaggage(baggageArray) {
 
 
 // Flugzeilen
-function addFlightRow(bodyEl,fromCity='',toCity='',depDate='',depTime='',arrDate='',arrTime='',airline='',pnr='', duration=''){
-  const container = document.getElementById(bodyEl);
-  if(!container) return;
-  const tr_header = document.createElement('tr');
-  const tr_details = document.createElement('tr');
-  tr_details.className = 'flight-details-row';
+function addFlightRow(bodyEl, fromCity = '', toCity = '', depDate = '', depTime = '', arrDate = '', arrTime = '', airline = '', pnr = '', duration = '') {
+    const container = document.getElementById(bodyEl);
+    if (!container) return;
+    const tr_header = document.createElement('tr');
+    const tr_details = document.createElement('tr');
+    tr_details.className = 'flight-details-row';
 
-  tr_header.innerHTML = `<td colspan="3" style="padding-bottom:0;"><label style="margin-bottom:0;">Fluggesellschaft / Flugnr.<input class="airline" value="${escapeHtml(airline)}" placeholder="z. B. Lufthansa LH123"></label></td>
+    tr_header.innerHTML = `<td colspan="3" style="padding-bottom:0;"><label style="margin-bottom:0;">Fluggesellschaft / Flugnr.<input class="airline" value="${escapeHtml(airline)}" placeholder="z. B. Lufthansa LH123"></label></td>
                          <td colspan="3" style="padding-bottom:0;"><label style="margin-bottom:0;">PNR<input class="pnr" value="${escapeHtml(pnr)}" placeholder="Buchungscode"></label></td>`;
-  tr_details.innerHTML=`<td><input class="fromCity" value="${escapeHtml(fromCity)}"></td>
+    tr_details.innerHTML = `<td><input class="fromCity" value="${escapeHtml(fromCity)}"></td>
   <td><input class="toCity" value="${escapeHtml(toCity)}"></td>
   <td><input type="date" class="depDate" value="${depDate}"><br><input type="time" class="depTime" value="${depTime}"></td>
   <td><input type="date" class="arrDate" value="${arrDate}"><br><input type="time" class="arrTime" value="${arrTime}"></td>
   <td><input class="duration-input" value="${escapeHtml(duration)}" style="width: 80px;"></td>
   <td><button class="btn btn-icon danger remove"><i data-lucide="trash-2"></i></button></td>`;
-  
-  tr_details.querySelector('.remove').onclick=()=>{ tr_header.remove(); tr_details.remove(); updatePreview(); }
-  tr_header.querySelectorAll('input').forEach(i => i.oninput = updatePreview);
-  tr_details.querySelectorAll('input').forEach(i=>i.oninput=updatePreview);
 
-  container.appendChild(tr_header); container.appendChild(tr_details);
-  if (window.lucide) window.lucide.createIcons();
-  updatePreview();
+    tr_details.querySelector('.remove').onclick = () => { tr_header.remove(); tr_details.remove(); updatePreview(); }
+    tr_header.querySelectorAll('input').forEach(i => i.oninput = updatePreview);
+    tr_details.querySelectorAll('input').forEach(i => i.oninput = updatePreview);
+
+    container.appendChild(tr_header); container.appendChild(tr_details);
+    if (window.lucide) window.lucide.createIcons();
+    updatePreview();
 }
-if(addOutboundBtn) addOutboundBtn.onclick=()=>addFlightRow('outboundBody')
+if (addOutboundBtn) addOutboundBtn.onclick = () => addFlightRow('outboundBody')
 
 // Rückflug-Option
-if(addReturnSectionBtn) addReturnSectionBtn.onclick=()=>{
-  if(document.getElementById('returnSection') || !returnSectionContainer) return;
-  const div=document.createElement('div')
-  div.id="returnSection"
-  div.className = "card-content"
-  div.innerHTML=`<h4>Rückflug</h4>
+if (addReturnSectionBtn) addReturnSectionBtn.onclick = () => {
+    if (document.getElementById('returnSection') || !returnSectionContainer) return;
+    const div = document.createElement('div')
+    div.id = "returnSection"
+    div.className = "card-content"
+    div.innerHTML = `<h4>Rückflug</h4>
     <div class="form-group">
         <label for="totalReturnDuration">Gesamte Reisedauer (Rückflug)</label>
         <input id="totalReturnDuration" placeholder="Wird automatisch berechnet, kann aber überschrieben werden">
@@ -667,209 +701,209 @@ if(addReturnSectionBtn) addReturnSectionBtn.onclick=()=>{
         <button class="btn btn-secondary" id="addReturn"><i data-lucide="plus"></i>Rückflug hinzufügen</button>
         <button class="btn btn-text danger" id="removeReturnSection">Rückflug-Option entfernen</button>
     </div>`
-  
-  returnSectionContainer.innerHTML = '';
-  returnSectionContainer.appendChild(div);
 
-  document.getElementById('addReturn').onclick=()=>addFlightRow('returnBody')
-  document.getElementById('removeReturnSection').onclick=()=>{
-      div.remove();
-      returnSectionContainer.innerHTML = `<button class="btn btn-text" id="addReturnSection"><i data-lucide="corner-down-left"></i>Rückflug-Option hinzufügen</button>`;
-      document.getElementById('addReturnSection').onclick = addReturnSectionBtn.onclick;
-      
-      // ========== START: GEPÄCK-ÄNDERUNG ==========
-      // Verstecke alle Rückflug-Gepäck-Sektionen und leere sie
-      document.querySelectorAll('.baggage-section[data-flight="return"]').forEach(el => {
-          el.style.display = 'none';
-          el.querySelector('.baggage-list').innerHTML = '';
-      });
-      // ========== ENDE: GEPÄCK-ÄNDERUNG ==========
-      
-      if (window.lucide) window.lucide.createIcons();
-      updatePreview();
-  }
-  
-  // ========== START: GEPÄCK-ÄNDERUNG ==========
-  // Zeige alle Rückflug-Gepäck-Sektionen an
-  document.querySelectorAll('.baggage-section[data-flight="return"]').forEach(el => {
-      el.style.display = 'block';
-  });
-  // ========== ENDE: GEPÄCK-ÄNDERUNG ==========
-  
-  if (window.lucide) window.lucide.createIcons();
+    returnSectionContainer.innerHTML = '';
+    returnSectionContainer.appendChild(div);
+
+    document.getElementById('addReturn').onclick = () => addFlightRow('returnBody')
+    document.getElementById('removeReturnSection').onclick = () => {
+        div.remove();
+        returnSectionContainer.innerHTML = `<button class="btn btn-text" id="addReturnSection"><i data-lucide="corner-down-left"></i>Rückflug-Option hinzufügen</button>`;
+        document.getElementById('addReturnSection').onclick = addReturnSectionBtn.onclick;
+
+        // ========== START: GEPÄCK-ÄNDERUNG ==========
+        // Verstecke alle Rückflug-Gepäck-Sektionen und leere sie
+        document.querySelectorAll('.baggage-section[data-flight="return"]').forEach(el => {
+            el.style.display = 'none';
+            el.querySelector('.baggage-list').innerHTML = '';
+        });
+        // ========== ENDE: GEPÄCK-ÄNDERUNG ==========
+
+        if (window.lucide) window.lucide.createIcons();
+        updatePreview();
+    }
+
+    // ========== START: GEPÄCK-ÄNDERUNG ==========
+    // Zeige alle Rückflug-Gepäck-Sektionen an
+    document.querySelectorAll('.baggage-section[data-flight="return"]').forEach(el => {
+        el.style.display = 'block';
+    });
+    // ========== ENDE: GEPÄCK-ÄNDERUNG ==========
+
+    if (window.lucide) window.lucide.createIcons();
 }
 
 // Leistungen
-function addItem(desc='',qty=1,price=0, option=''){
-  if(!itemsBody) return;
-  const tr=document.createElement('tr')
-  tr.innerHTML=`<td><select class="opt"><option value="">--Option--</option><option value="Hotel" ${option==='Hotel'?'selected':''}>Hotel</option><option value="Flugticket" ${option==='Flugticket'?'selected':''}>Flugticket</option><option value="Gebäck" ${option==='Gebäck'?'selected':''}>Gebäck</option><option value="Sonstige" ${option==='Sonstige'?'selected':''}>Sonstige</option></select></td>
+function addItem(desc = '', qty = 1, price = 0, option = '') {
+    if (!itemsBody) return;
+    const tr = document.createElement('tr')
+    tr.innerHTML = `<td><select class="opt"><option value="">--Option--</option><option value="Hotel" ${option === 'Hotel' ? 'selected' : ''}>Hotel</option><option value="Flugticket" ${option === 'Flugticket' ? 'selected' : ''}>Flugticket</option><option value="Gebäck" ${option === 'Gebäck' ? 'selected' : ''}>Gebäck</option><option value="Sonstige" ${option === 'Sonstige' ? 'selected' : ''}>Sonstige</option></select></td>
     <td><input class="desc" value="${escapeHtml(desc)}" placeholder="z.B. Hotel 7 Nächte"></td>
     <td><input class="qty center" type="number" value="${qty}"></td>
     <td><input class="price center" type="number" step="0.01" value="${price}"></td>
     <td class="line center">0.00</td><td><button class="btn btn-icon danger remove"><i data-lucide="trash-2"></i></button></td>`
-  tr.querySelector('.remove').onclick=()=>{tr.remove();updatePreview()}
-  tr.querySelectorAll('input,select').forEach(i=>i.oninput=updatePreview)
-  itemsBody.appendChild(tr)
-  if (window.lucide) window.lucide.createIcons();
-  updatePreview()
+    tr.querySelector('.remove').onclick = () => { tr.remove(); updatePreview() }
+    tr.querySelectorAll('input,select').forEach(i => i.oninput = updatePreview)
+    itemsBody.appendChild(tr)
+    if (window.lucide) window.lucide.createIcons();
+    updatePreview()
 }
-if(addItemBtn) addItemBtn.onclick=()=>addItem()
-if(addQuickBtn) addQuickBtn.onclick=()=>{
-  const opt = quickOption.options[quickOption.selectedIndex]
-  if(opt && opt.dataset && opt.dataset.desc){
-    addItem(opt.dataset.desc,1,0, opt.textContent.split(' ')[0])
-    quickOption.selectedIndex = 0
-  }
+if (addItemBtn) addItemBtn.onclick = () => addItem()
+if (addQuickBtn) addQuickBtn.onclick = () => {
+    const opt = quickOption.options[quickOption.selectedIndex]
+    if (opt && opt.dataset && opt.dataset.desc) {
+        addItem(opt.dataset.desc, 1, 0, opt.textContent.split(' ')[0])
+        quickOption.selectedIndex = 0
+    }
 }
 
 // Sammeln Flugdaten
-function collectFlights(bodyId){
-  return [...document.querySelectorAll(`#${bodyId} tr.flight-details-row`)].map(r=>{
-    const headerRow = r.previousElementSibling;
-    const airline = headerRow ? headerRow.querySelector('.airline').value : '';
-    const pnr = headerRow ? headerRow.querySelector('.pnr').value : '';
-    const fromCity=r.querySelector('.fromCity').value, toCity=r.querySelector('.toCity').value
-    const dd=r.querySelector('.depDate').value, dt=r.querySelector('.depTime').value
-    const ad=r.querySelector('.arrDate').value, at=r.querySelector('.arrTime').value
-    const dur=r.querySelector('.duration-input').value;
-    return {fromCity,toCity,airline,pnr,depDate:dd,depTime:dt,arrDate:ad,arrTime:at,duration:dur}
-  })
+function collectFlights(bodyId) {
+    return [...document.querySelectorAll(`#${bodyId} tr.flight-details-row`)].map(r => {
+        const headerRow = r.previousElementSibling;
+        const airline = headerRow ? headerRow.querySelector('.airline').value : '';
+        const pnr = headerRow ? headerRow.querySelector('.pnr').value : '';
+        const fromCity = r.querySelector('.fromCity').value, toCity = r.querySelector('.toCity').value
+        const dd = r.querySelector('.depDate').value, dt = r.querySelector('.depTime').value
+        const ad = r.querySelector('.arrDate').value, at = r.querySelector('.arrTime').value
+        const dur = r.querySelector('.duration-input').value;
+        return { fromCity, toCity, airline, pnr, depDate: dd, depTime: dt, arrDate: ad, arrTime: at, duration: dur }
+    })
 }
 
 // Vorschau
-function updatePreview(){
-  if (!previewEl) return;
-  
-  const layoverValues = {};
-  ['outboundBody', 'returnBody'].forEach(bodyId => {
-      layoverValues[bodyId] = [];
-      document.querySelectorAll(`#${bodyId} .layover-input`).forEach(input => {
-          layoverValues[bodyId].push(input.value);
-      });
-  });
+function updatePreview() {
+    if (!previewEl) return;
 
-  document.querySelectorAll('.layover-row-form').forEach(row => row.remove());
-  ['outboundBody', 'returnBody'].forEach(bodyId => {
-      const flightRows = [...document.querySelectorAll(`#${bodyId} .flight-details-row`)];
-      let layoverIndex = 0;
-      for (let i = 0; i < flightRows.length - 1; i++) {
-          const currentRow = flightRows[i];
-          const nextRow = flightRows[i + 1];
-          const arrDate = currentRow.querySelector('.arrDate').value, arrTime = currentRow.querySelector('.arrTime').value;
-          const depDate = nextRow.querySelector('.depDate').value, depTime = nextRow.querySelector('.depTime').value;
-          const layoverCity = currentRow.querySelector('.toCity').value;
+    const layoverValues = {};
+    ['outboundBody', 'returnBody'].forEach(bodyId => {
+        layoverValues[bodyId] = [];
+        document.querySelectorAll(`#${bodyId} .layover-input`).forEach(input => {
+            layoverValues[bodyId].push(input.value);
+        });
+    });
 
-          if (arrDate && arrTime && depDate && depTime) {
-              const newRow = document.createElement('tr');
-              newRow.className = 'layover-row-form';
-              const existingValue = (layoverValues[bodyId] && layoverValues[bodyId][layoverIndex]) || '';
-              newRow.innerHTML = `<td colspan="5" style="text-align: right; background-color: rgba(0,0,0,0.05);">Umsteigezeit in ${escapeHtml(layoverCity)}: <input class="layover-input" value="${existingValue}" placeholder="z.B. 2h 30m" style="width: 120px;"></td><td></td>`;
-              currentRow.after(newRow);
-              newRow.querySelector('input').oninput = updatePreview;
-              layoverIndex++;
-          }
-      }
-  });
+    document.querySelectorAll('.layover-row-form').forEach(row => row.remove());
+    ['outboundBody', 'returnBody'].forEach(bodyId => {
+        const flightRows = [...document.querySelectorAll(`#${bodyId} .flight-details-row`)];
+        let layoverIndex = 0;
+        for (let i = 0; i < flightRows.length - 1; i++) {
+            const currentRow = flightRows[i];
+            const nextRow = flightRows[i + 1];
+            const arrDate = currentRow.querySelector('.arrDate').value, arrTime = currentRow.querySelector('.arrTime').value;
+            const depDate = nextRow.querySelector('.depDate').value, depTime = nextRow.querySelector('.depTime').value;
+            const layoverCity = currentRow.querySelector('.toCity').value;
 
-  const number=invoiceNumberEl.value, date=invoiceDateEl.value
-  const from=document.getElementById('from').value
-  const to=document.getElementById('to').value
-  const customerEmail = document.getElementById('customerEmail').value;
-  const customerPhone = document.getElementById('customerPhone').value;
-  
-  let toBlock = escapeHtml(to);
-  if (customerEmail) toBlock += `\n${escapeHtml(customerEmail)}`;
-  if (customerPhone) toBlock += `\n${escapeHtml(customerPhone)}`;
-
-  const note=document.getElementById('note').value
-  
-  const paymentMethod = document.getElementById('paymentMethod').value;
-  let paymentHtml = '';
-  if (paymentMethod === 'Überweisung') {
-      const payment=document.getElementById('payment').value.replace("Rechnungsnummer", number);
-      if (payment) paymentHtml = `<h3>Zahlungsinformationen</h3><p>${escapeHtml(payment).replace(/\n/g,"<br>")}</p>`;
-  } else if (paymentMethod === 'Barzahlung') {
-      paymentHtml = `<h3>Zahlungsinformationen</h3><p>Zahlungsmethode: Barzahlung</p>`;
-  }
-  
-  let netto=0
-  
-  // NEU: VAT Einstellungen
-  const enableVat = enableVatEl ? enableVatEl.checked : false;
-  const vatRate = vatRateEl ? parseFloat(vatRateEl.value) / 100 : 0.19; // Default 19%
-  let vatAmount = 0;
-  let totalGross = 0;
-  
-  // ========== START: GEPÄCK-ÄNDERUNG (Vorschau-Logik) ==========
-  const invoiceType = document.querySelector('input[name="invoiceType"]:checked') ? document.querySelector('input[name="invoiceType"]:checked').value : 'full';
-  let passengers = '';
-  let outboundFlights = [];
-  let returnFlights = [];
-
-  if (invoiceType === 'full') {
-      passengers = [...document.querySelectorAll('#passengerBody > tr:not(.baggage-row)')].map(r=>{
-        const name = r.querySelector('.pname').value;
-        const dob = r.querySelector('.pdob').value;
-        
-        // Sammle und formatiere Gepäck
-        const baggageData = collectBaggageData(r);
-        const outBaggage = formatBaggage(baggageData.outbound);
-        const retBaggage = formatBaggage(baggageData.return);
-
-        let baggageInfo = '';
-        if (outBaggage) {
-            baggageInfo += `<br><small style="color: #555;"><b>Hinflug:</b> ${escapeHtml(outBaggage)}</small>`;
+            if (arrDate && arrTime && depDate && depTime) {
+                const newRow = document.createElement('tr');
+                newRow.className = 'layover-row-form';
+                const existingValue = (layoverValues[bodyId] && layoverValues[bodyId][layoverIndex]) || '';
+                newRow.innerHTML = `<td colspan="5" style="text-align: right; background-color: rgba(0,0,0,0.05);">Umsteigezeit in ${escapeHtml(layoverCity)}: <input class="layover-input" value="${existingValue}" placeholder="z.B. 2h 30m" style="width: 120px;"></td><td></td>`;
+                currentRow.after(newRow);
+                newRow.querySelector('input').oninput = updatePreview;
+                layoverIndex++;
+            }
         }
-        // Zeige Rückflug-Gepäck nur an, wenn die Rückflug-Sektion existiert
-        if (retBaggage && document.getElementById('returnSection')) {
-            baggageInfo += `<br><small style="color: #555;"><b>Rückflug:</b> ${escapeHtml(retBaggage)}</small>`;
-        }
-        
-        return `<li>${escapeHtml(name)} (${dob})${baggageInfo}</li>`;
-      }).join("");
+    });
 
-      outboundFlights = collectFlights('outboundBody');
-      returnFlights = document.getElementById('returnBody') ? collectFlights('returnBody') : [];
-  }
-  
-  applyBackgroundSettings()
+    const number = invoiceNumberEl.value, date = invoiceDateEl.value
+    const from = document.getElementById('from').value
+    const to = document.getElementById('to').value
+    const customerEmail = document.getElementById('customerEmail').value;
+    const customerPhone = document.getElementById('customerPhone').value;
 
-  function renderFlights(title, flights) {
-    if (flights.length === 0) return "";
-    let rowsHtml = "";
-    for (let i = 0; i < flights.length; i++) {
-        const f = flights[i];
-        if (f.airline || f.pnr) { rowsHtml += `<tr class="layover-row" style="text-align:left; font-style:normal;"><td colspan="5" style="padding: 6px 8px;"><b>${escapeHtml(f.airline || "")}</b> ${f.pnr ? `— PNR: ${escapeHtml(f.pnr)}` : ""}</td></tr>`; }
-        rowsHtml += `<tr><td>${escapeHtml(f.fromCity)}</td><td>${escapeHtml(f.toCity)}</td><td>${f.depDate}<br>${f.depTime}</td><td>${f.arrDate}<br>${f.arrTime}</td><td>${f.duration}</td></tr>`;
-        if (i < flights.length - 1) {
-            const nextFlight = flights[i + 1];
-            if (f.arrDate && f.arrTime && nextFlight.depDate && nextFlight.depTime) {
-                const bodyId = title === "Hinflug" ? "outboundBody" : "returnBody";
-                const layoverInput = document.querySelectorAll(`#${bodyId} .layover-input`)[i];
-                const layoverDuration = layoverInput ? layoverInput.value : '';
-                if (layoverDuration) {
-                    rowsHtml += `<tr class="layover-row"><td colspan="5" style="text-align: right;">Umsteigezeit in ${escapeHtml(f.toCity)}: ${escapeHtml(layoverDuration)}</td></tr>`;
+    let toBlock = escapeHtml(to);
+    if (customerEmail) toBlock += `\n${escapeHtml(customerEmail)}`;
+    if (customerPhone) toBlock += `\n${escapeHtml(customerPhone)}`;
+
+    const note = document.getElementById('note').value
+
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    let paymentHtml = '';
+    if (paymentMethod === 'Überweisung') {
+        const payment = document.getElementById('payment').value.replace("Rechnungsnummer", number);
+        if (payment) paymentHtml = `<h3>Zahlungsinformationen</h3><p>${escapeHtml(payment).replace(/\n/g, "<br>")}</p>`;
+    } else if (paymentMethod === 'Barzahlung') {
+        paymentHtml = `<h3>Zahlungsinformationen</h3><p>Zahlungsmethode: Barzahlung</p>`;
+    }
+
+    let netto = 0
+
+    // NEU: VAT Einstellungen
+    const enableVat = enableVatEl ? enableVatEl.checked : false;
+    const vatRate = vatRateEl ? parseFloat(vatRateEl.value) / 100 : 0.19; // Default 19%
+    let vatAmount = 0;
+    let totalGross = 0;
+
+    // ========== START: GEPÄCK-ÄNDERUNG (Vorschau-Logik) ==========
+    const invoiceType = document.querySelector('input[name="invoiceType"]:checked') ? document.querySelector('input[name="invoiceType"]:checked').value : 'full';
+    let passengers = '';
+    let outboundFlights = [];
+    let returnFlights = [];
+
+    if (invoiceType === 'full') {
+        passengers = [...document.querySelectorAll('#passengerBody > tr:not(.baggage-row)')].map(r => {
+            const name = r.querySelector('.pname').value;
+            const dob = r.querySelector('.pdob').value;
+
+            // Sammle und formatiere Gepäck
+            const baggageData = collectBaggageData(r);
+            const outBaggage = formatBaggage(baggageData.outbound);
+            const retBaggage = formatBaggage(baggageData.return);
+
+            let baggageInfo = '';
+            if (outBaggage) {
+                baggageInfo += `<br><small style="color: #555;"><b>Hinflug:</b> ${escapeHtml(outBaggage)}</small>`;
+            }
+            // Zeige Rückflug-Gepäck nur an, wenn die Rückflug-Sektion existiert
+            if (retBaggage && document.getElementById('returnSection')) {
+                baggageInfo += `<br><small style="color: #555;"><b>Rückflug:</b> ${escapeHtml(retBaggage)}</small>`;
+            }
+
+            return `<li>${escapeHtml(name)} (${dob})${baggageInfo}</li>`;
+        }).join("");
+
+        outboundFlights = collectFlights('outboundBody');
+        returnFlights = document.getElementById('returnBody') ? collectFlights('returnBody') : [];
+    }
+
+    applyBackgroundSettings()
+
+    function renderFlights(title, flights) {
+        if (flights.length === 0) return "";
+        let rowsHtml = "";
+        for (let i = 0; i < flights.length; i++) {
+            const f = flights[i];
+            if (f.airline || f.pnr) { rowsHtml += `<tr class="layover-row" style="text-align:left; font-style:normal;"><td colspan="5" style="padding: 6px 8px;"><b>${escapeHtml(f.airline || "")}</b> ${f.pnr ? `— PNR: ${escapeHtml(f.pnr)}` : ""}</td></tr>`; }
+            rowsHtml += `<tr><td>${escapeHtml(f.fromCity)}</td><td>${escapeHtml(f.toCity)}</td><td>${f.depDate}<br>${f.depTime}</td><td>${f.arrDate}<br>${f.arrTime}</td><td>${f.duration}</td></tr>`;
+            if (i < flights.length - 1) {
+                const nextFlight = flights[i + 1];
+                if (f.arrDate && f.arrTime && nextFlight.depDate && nextFlight.depTime) {
+                    const bodyId = title === "Hinflug" ? "outboundBody" : "returnBody";
+                    const layoverInput = document.querySelectorAll(`#${bodyId} .layover-input`)[i];
+                    const layoverDuration = layoverInput ? layoverInput.value : '';
+                    if (layoverDuration) {
+                        rowsHtml += `<tr class="layover-row"><td colspan="5" style="text-align: right;">Umsteigezeit in ${escapeHtml(f.toCity)}: ${escapeHtml(layoverDuration)}</td></tr>`;
+                    }
                 }
             }
         }
+        let totalDurationForPreview = '';
+        if (title === "Hinflug" && document.getElementById('totalOutboundDuration')) {
+            totalDurationForPreview = document.getElementById('totalOutboundDuration').value;
+        } else if (title === "Rückflug" && document.getElementById('totalReturnDuration')) {
+            totalDurationForPreview = document.getElementById('totalReturnDuration').value;
+        }
+        const totalDurationHtml = totalDurationForPreview ? `<p style="text-align: right; font-weight: bold; margin-top: 10px;">Gesamte Reisedauer: ${escapeHtml(totalDurationForPreview)}</p>` : '';
+        return `<h3 class="flight-heading">${title}</h3><table><thead><tr><th>Von</th><th>Nach</th><th>Abflug</th><th>Ankunft</th><th>Dauer</th></tr></thead><tbody>${rowsHtml}</tbody></table>${totalDurationHtml}`;
     }
-    let totalDurationForPreview = '';
-    if (title === "Hinflug" && document.getElementById('totalOutboundDuration')) {
-        totalDurationForPreview = document.getElementById('totalOutboundDuration').value;
-    } else if (title === "Rückflug" && document.getElementById('totalReturnDuration')) {
-        totalDurationForPreview = document.getElementById('totalReturnDuration').value;
-    }
-    const totalDurationHtml = totalDurationForPreview ? `<p style="text-align: right; font-weight: bold; margin-top: 10px;">Gesamte Reisedauer: ${escapeHtml(totalDurationForPreview)}</p>` : '';
-    return `<h3 class="flight-heading">${title}</h3><table><thead><tr><th>Von</th><th>Nach</th><th>Abflug</th><th>Ankunft</th><th>Dauer</th></tr></thead><tbody>${rowsHtml}</tbody></table>${totalDurationHtml}`;
-  }
 
-  const items=[...document.querySelectorAll('#itemsBody tr')].map(r=>{
-    const d=r.querySelector('.desc').value, q=toNum(r.querySelector('.qty').value), p=toNum(r.querySelector('.price').value)
-    const line=q*p; netto+=line; r.querySelector('.line').textContent=format(line)
-    const opt = r.querySelector('.opt').value
-    return `<tr><td>${escapeHtml(opt)}</td><td>${escapeHtml(d)}</td><td class="center">${q}</td><td class="center">${format(p)}</td><td class="center">${format(line)}</td></tr>`
-  }).join("")
+    const items = [...document.querySelectorAll('#itemsBody tr')].map(r => {
+        const d = r.querySelector('.desc').value, q = toNum(r.querySelector('.qty').value), p = toNum(r.querySelector('.price').value)
+        const line = q * p; netto += line; r.querySelector('.line').textContent = format(line)
+        const opt = r.querySelector('.opt').value
+        return `<tr><td>${escapeHtml(opt)}</td><td>${escapeHtml(d)}</td><td class="center">${q}</td><td class="center">${format(p)}</td><td class="center">${format(line)}</td></tr>`
+    }).join("")
 
     if (enableVat) {
         vatAmount = netto * vatRate;
@@ -890,7 +924,123 @@ function updatePreview(){
     const contactEmail = document.getElementById('contactEmail') ? document.getElementById('contactEmail').value : 'urlaubsde@gmail.com';
     const contactPhone = document.getElementById('contactPhone') ? document.getElementById('contactPhone').value : '+4917664957576';
 
-  previewEl.innerHTML=`
+    // ... (Existing logic for variables like number, date, from, etc.) ...
+
+    if (invoiceType === 'travel_plan') {
+        const renderTravelPlanFlights = (flights, totalDuration) => {
+            if (!flights || flights.length === 0) return '';
+
+            let html = '';
+            for (let i = 0; i < flights.length; i++) {
+                const f = flights[i];
+                const depDateObj = new Date(f.depDate);
+                const arrDateObj = new Date(f.arrDate);
+                const depDateStr = depDateObj.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
+                const arrDateStr = arrDateObj.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
+
+                html += `
+                <div class="travel-plan-card">
+                    <div class="travel-segment-header">
+                        <div class="ts-airline"><span class="badge">${escapeHtml(f.airline || 'Flug')}</span> <span class="ts-pnr">${escapeHtml(f.pnr || '')}</span></div>
+                        <div class="ts-duration"><i data-lucide="clock" class="icon-xs"></i> ${escapeHtml(f.duration)}</div>
+                    </div>
+                    <div class="travel-segment-route">
+                        <div class="ts-city-group">
+                            <div class="ts-city">${escapeHtml(f.fromCity)}</div>
+                            <div class="ts-time">${f.depTime}</div>
+                            <div class="ts-date">${depDateStr}</div>
+                        </div>
+                        <div class="ts-arrow">
+                            <div class="ts-line"></div>
+                            <i data-lucide="plane" class="icon-rotate-90"></i>
+                            <div class="ts-line"></div>
+                        </div>
+                        <div class="ts-city-group right">
+                            <div class="ts-city">${escapeHtml(f.toCity)}</div>
+                            <div class="ts-time">${f.arrTime}</div>
+                            <div class="ts-date">${arrDateStr}</div>
+                        </div>
+                    </div>
+                </div>`;
+
+                // Layover Logic
+                if (i < flights.length - 1) {
+                    const nextFlight = flights[i + 1];
+                    // Try to find the calculated layover from the input or calculate it?
+                    // The inputs are indexed by i in the layover-input list.
+                    // We need to find which "body" we are in (outbound or return).
+                    // This function is generic, so we might need to pass the bodyId or just grep values.
+                    // Actually, let's just pass the layover duration if we have it.
+                    // But here we are inside the loop. 
+                    // Let's rely on the DOM elements we already query in the outer updatePreview or re-query.
+                    // Re-querying is safer.
+                    const bodyId = (flights === outboundFlights) ? 'outboundBody' : 'returnBody';
+                    const layoverInput = document.querySelectorAll(`#${bodyId} .layover-input`)[i];
+                    const layoverDuration = layoverInput ? layoverInput.value : '';
+
+                    if (layoverDuration) {
+                        html += `
+                        <div class="travel-plan-layover">
+                            <i data-lucide="coffee" class="icon-sm"></i> 
+                            <span>Aufenthalt in ${escapeHtml(f.toCity)} : ${escapeHtml(layoverDuration)}</span>
+                        </div>`;
+                    }
+                }
+            }
+            return html;
+        };
+
+        const outboundHtml = renderTravelPlanFlights(outboundFlights);
+        const returnHtml = renderTravelPlanFlights(returnFlights);
+        const totalOutbound = document.getElementById('totalOutboundDuration')?.value;
+        const totalReturn = document.getElementById('totalReturnDuration')?.value;
+
+        // Collect passengers specifically for this view
+        const passengerRows = [...document.querySelectorAll('#passengerBody > tr:not(.baggage-row)')];
+        let passengerHtml = '';
+        if (passengerRows.length > 0) {
+            passengerHtml = `<div class="travel-passengers">
+                <div class="tp-label">Reisende:</div>
+                <div class="tp-list">${passengerRows.map(r => escapeHtml(r.querySelector('.pname').value)).join(', ')}</div>
+            </div>`;
+        }
+
+        previewEl.innerHTML = `
+        <div class="travel-plan-container">
+            <div class="travel-plan-header">
+                <div class="tp-brand">
+                    <i data-lucide="plane" class="tp-logo-icon"></i>
+                    <span>URLAUB</span>
+                </div>
+                <h1>Reiseplan</h1>
+                ${passengerHtml}
+            </div>
+            
+            <div class="travel-plan-body">
+                ${outboundHtml ? `<div class="tp-section-title">Hinflug</div>${outboundHtml}` : ''}
+                ${returnHtml ? `<div class="tp-section-title" style="margin-top: 2rem;">Rückflug</div>${returnHtml}` : ''}
+            </div>
+
+            <div class="travel-plan-footer">
+                <div class="tp-footer-row">
+                    <span>GESAMTREISEZEIT (Hinflug)</span>
+                    <span class="tp-total-time">${escapeHtml(totalOutbound || '---')}</span>
+                </div>
+                ${totalReturn ? `
+                <div class="tp-footer-row">
+                    <span>GESAMTREISEZEIT (Rückflug)</span>
+                    <span class="tp-total-time">${escapeHtml(totalReturn)}</span>
+                </div>` : ''}
+            </div>
+        </div>`;
+
+        // Don't forget to render icons for the new content
+        if (window.lucide) window.lucide.createIcons();
+        return; // Exit early for travel plan
+    }
+
+    // Existing logic for 'full' and 'simple'
+    previewEl.innerHTML = `
     <div class="pdf-block invoice-header">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap: wrap; gap: 20px;">
           <div>
@@ -911,10 +1061,10 @@ function updatePreview(){
         <ul>${passengers}</ul>
     </div>
     <div class="pdf-block invoice-outbound">
-        ${renderFlights("Hinflug",outboundFlights)}
+        ${renderFlights("Hinflug", outboundFlights)}
     </div>
     <div class="pdf-block invoice-return">
-        ${renderFlights("Rückflug",returnFlights)}
+        ${renderFlights("Rückflug", returnFlights)}
     </div>
     ` : ''}
     <div class="pdf-block invoice-payment-block">
@@ -928,7 +1078,7 @@ function updatePreview(){
           </tfoot>
         </table>
         ${vatDisclaimer}
-        ${note ? `<h3>Notiz</h3><p>${escapeHtml(note).replace(/\n/g,"<br>")}</p>` : ""}
+        ${note ? `<h3>Notiz</h3><p>${escapeHtml(note).replace(/\n/g, "<br>")}</p>` : ""}
         ${paymentHtml}
     </div>
     <div class="pdf-block" style="border-top: 1px solid #ccc; margin-top: 40px; padding-top: 10px; text-align: center; font-size: 0.8rem; color: #555;">
@@ -942,24 +1092,24 @@ if (updatePreviewBtn) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadInvoiceSettings(); // Load invoice settings on startup
-  if (document.getElementById('pageInvoices')) {
-    // Füge Passagiere ohne Gepäck-Daten hinzu (die UI wird erstellt)
-    addPassenger("Max Mustermann","1985-05-10");
-    addPassenger("Erika Mustermann","1987-07-21");
-    
-    addFlightRow('outboundBody',"Hamburg","Rom","2025-09-12","08:15","2025-09-12","11:05", "Lufthansa LH24", "ABCDE1");
-    addItem("Hotel 7 Nächte",1,560);
-    updatePreview();
-  }
-  toggleBankDetails();
+    loadInvoiceSettings(); // Load invoice settings on startup
+    if (document.getElementById('pageInvoices')) {
+        // Füge Passagiere ohne Gepäck-Daten hinzu (die UI wird erstellt)
+        addPassenger("Max Mustermann", "1985-05-10");
+        addPassenger("Erika Mustermann", "1987-07-21");
+
+        addFlightRow('outboundBody', "Hamburg", "Rom", "2025-09-12", "08:15", "2025-09-12", "11:05", "Lufthansa LH24", "ABCDE1");
+        addItem("Hotel 7 Nächte", 1, 560);
+        updatePreview();
+    }
+    toggleBankDetails();
 });
 
 // PDF EXPORT
 if (downloadPDFBtn) downloadPDFBtn.onclick = async () => {
     saveInvoice();
     updatePreview();
-    
+
     const previewPane = document.querySelector('.preview-pane');
     const wasHidden = previewPane.style.display === 'none';
     if (wasHidden) {
@@ -971,7 +1121,7 @@ if (downloadPDFBtn) downloadPDFBtn.onclick = async () => {
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-    
+
     const margin = 15;
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -1047,7 +1197,7 @@ if (downloadPDFBtn) downloadPDFBtn.onclick = async () => {
         pdf.addImage(outboundCanvas, 'PNG', margin, y, usableWidth, imgHeight);
         y += imgHeight + 5;
     }
-    
+
     // Block 4: Rückflug (zusammenhalten)
     const returnCanvas = await getCanvas('.invoice-return');
     if (returnCanvas) {
@@ -1064,7 +1214,7 @@ if (downloadPDFBtn) downloadPDFBtn.onclick = async () => {
     // Block 5: Leistungen & Fußzeile (zusammenhalten)
     const paymentCanvas = await getCanvas('.invoice-payment-block');
     const footerCanvas = await getCanvas('.pdf-block[style*="border-top"]');
-    
+
     if (paymentCanvas) {
         const paymentHeight = getImgHeight(paymentCanvas);
         const footerHeight = getImgHeight(footerCanvas);
@@ -1084,8 +1234,8 @@ if (downloadPDFBtn) downloadPDFBtn.onclick = async () => {
             y += footerHeight + 5;
         }
     }
-    
-    
+
+
     const fileName = `Rechnung_${document.getElementById('invoiceNumber').value}.pdf`;
     pdf.save(fileName);
 
@@ -1096,101 +1246,101 @@ if (downloadPDFBtn) downloadPDFBtn.onclick = async () => {
 
 
 // Save/Load
-function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
 
-function collectInvoiceData(){
-  const totalOutboundEl = document.getElementById('totalOutboundDuration');
-  const totalReturnEl = document.getElementById('totalReturnDuration');
-  const invoiceType = document.querySelector('input[name="invoiceType"]:checked') ? document.querySelector('input[name="invoiceType"]:checked').value : 'full';
+function collectInvoiceData() {
+    const totalOutboundEl = document.getElementById('totalOutboundDuration');
+    const totalReturnEl = document.getElementById('totalReturnDuration');
+    const invoiceType = document.querySelector('input[name="invoiceType"]:checked') ? document.querySelector('input[name="invoiceType"]:checked').value : 'full';
 
-  const data = {
-    number: invoiceNumberEl.value, date: invoiceDateEl.value,
-    from: document.getElementById('from').value, to: document.getElementById('to').value,
-    customerEmail: document.getElementById('customerEmail').value,
-    customerPhone: document.getElementById('customerPhone').value,
-    note: document.getElementById('note').value, payment: document.getElementById('payment').value,
-    paymentMethod: document.getElementById('paymentMethod').value, 
-    items: [...document.querySelectorAll('#itemsBody tr')].map(r=>({ option: r.querySelector('.opt').value, desc: r.querySelector('.desc').value, qty: r.querySelector('.qty').value, price: r.querySelector('.price').value })),
-    logo: logoData,
-    bgSettings: { enabled: bgToggle.checked, size: bgSize.value, opacity: bgOpacity.value, color: bgColor.value, colorOpacity: bgColorOpacity.value, headingColor: headingColorEl.value },
-    vatSettings: { enableVat: enableVatEl.checked, vatRate: vatRateEl.value },
-    createdAt: new Date().toISOString(),
-    invoiceType: invoiceType // Save the type
-  };
+    const data = {
+        number: invoiceNumberEl.value, date: invoiceDateEl.value,
+        from: document.getElementById('from').value, to: document.getElementById('to').value,
+        customerEmail: document.getElementById('customerEmail').value,
+        customerPhone: document.getElementById('customerPhone').value,
+        note: document.getElementById('note').value, payment: document.getElementById('payment').value,
+        paymentMethod: document.getElementById('paymentMethod').value,
+        items: [...document.querySelectorAll('#itemsBody tr')].map(r => ({ option: r.querySelector('.opt').value, desc: r.querySelector('.desc').value, qty: r.querySelector('.qty').value, price: r.querySelector('.price').value })),
+        logo: logoData,
+        bgSettings: { enabled: bgToggle.checked, size: bgSize.value, opacity: bgOpacity.value, color: bgColor.value, colorOpacity: bgColorOpacity.value, headingColor: headingColorEl.value },
+        vatSettings: { enableVat: enableVatEl.checked, vatRate: vatRateEl.value },
+        createdAt: new Date().toISOString(),
+        invoiceType: invoiceType // Save the type
+    };
 
-  if (invoiceType === 'full') {
-    data.passengers = [...document.querySelectorAll('#passengerBody > tr:not(.baggage-row)')].map(r=>({ 
-        name: r.querySelector('.pname').value, 
-        dob: r.querySelector('.pdob').value,
-        baggage: collectBaggageData(r)
-    }));
-    data.outbound = collectFlights('outboundBody');
-    data.returns = document.getElementById('returnBody') ? collectFlights('returnBody') : [];
-    data.totalOutboundDuration = totalOutboundEl ? totalOutboundEl.value : '';
-    data.totalReturnDuration = totalReturnEl ? totalReturnEl.value : '';
-  } else {
-    data.passengers = [];
-    data.outbound = [];
-    data.returns = [];
-    data.totalOutboundDuration = '';
-    data.totalReturnDuration = '';
-  }
+    if (invoiceType === 'full') {
+        data.passengers = [...document.querySelectorAll('#passengerBody > tr:not(.baggage-row)')].map(r => ({
+            name: r.querySelector('.pname').value,
+            dob: r.querySelector('.pdob').value,
+            baggage: collectBaggageData(r)
+        }));
+        data.outbound = collectFlights('outboundBody');
+        data.returns = document.getElementById('returnBody') ? collectFlights('returnBody') : [];
+        data.totalOutboundDuration = totalOutboundEl ? totalOutboundEl.value : '';
+        data.totalReturnDuration = totalReturnEl ? totalReturnEl.value : '';
+    } else {
+        data.passengers = [];
+        data.outbound = [];
+        data.returns = [];
+        data.totalOutboundDuration = '';
+        data.totalReturnDuration = '';
+    }
 
-  return data;
+    return data;
 }
 
-function saveInvoice(){
-  const data = collectInvoiceData();
-  let list = JSON.parse(localStorage.getItem('invoices')||'[]');
-  const idx = list.findIndex(i=>i.number === data.number);
-  
-  if(idx >= 0){
-    data.status = list[idx].status || 'Unbezahlt';
-    list[idx] = data;
-  } else {
-    data.status = 'Unbezahlt';
-    list.push(data);
-  };
+function saveInvoice() {
+    const data = collectInvoiceData();
+    let list = JSON.parse(localStorage.getItem('invoices') || '[]');
+    const idx = list.findIndex(i => i.number === data.number);
 
-  localStorage.setItem('invoices', JSON.stringify(list));
+    if (idx >= 0) {
+        data.status = list[idx].status || 'Unbezahlt';
+        list[idx] = data;
+    } else {
+        data.status = 'Unbezahlt';
+        list.push(data);
+    };
 
-  // NEU: Kundeninformationen speichern
-  const customerNameFull = (data.to || '').split('\n')[0].trim();
-  let firstName = '';
-  let lastName = '';
-  const nameParts = customerNameFull.split(' ');
-  if (nameParts.length > 1) {
-      firstName = nameParts.slice(0, -1).join(' ');
-      lastName = nameParts[nameParts.length - 1];
-  } else {
-      firstName = customerNameFull;
-  }
+    localStorage.setItem('invoices', JSON.stringify(list));
 
-  const customerData = {
-      firstName: firstName,
-      lastName: lastName,
-      phone: data.customerPhone || '',
-      email: data.customerEmail || '',
-      // Add other relevant fields if available in invoice data
-      id: `cust_${Date.now()}` // Temporärer ID, falls noch keiner existiert
-  };
+    // NEU: Kundeninformationen speichern
+    const customerNameFull = (data.to || '').split('\n')[0].trim();
+    let firstName = '';
+    let lastName = '';
+    const nameParts = customerNameFull.split(' ');
+    if (nameParts.length > 1) {
+        firstName = nameParts.slice(0, -1).join(' ');
+        lastName = nameParts[nameParts.length - 1];
+    } else {
+        firstName = customerNameFull;
+    }
 
-  if (customerData.firstName) { // Nur speichern, wenn ein Name vorhanden ist
-      let customers = getCustomers();
-      const existingCustomer = customers.find(c => 
-          (c.email && c.email === customerData.email && customerData.email !== '') ||
-          (c.phone && c.phone === customerData.phone && customerData.phone !== '') ||
-          (c.firstName === customerData.firstName && c.lastName === customerData.lastName && customerData.firstName !== '')
-      );
+    const customerData = {
+        firstName: firstName,
+        lastName: lastName,
+        phone: data.customerPhone || '',
+        email: data.customerEmail || '',
+        // Add other relevant fields if available in invoice data
+        id: `cust_${Date.now()}` // Temporärer ID, falls noch keiner existiert
+    };
 
-      if (!existingCustomer) {
-          customers.push(customerData);
-          saveCustomers(customers);
-          renderCustomerList(); // Aktualisiere die Kundenliste in der UI
-      }
-  }
-  
-  createInvoiceReminders(data); // NEU: Erinnerungen erstellen
+    if (customerData.firstName) { // Nur speichern, wenn ein Name vorhanden ist
+        let customers = getCustomers();
+        const existingCustomer = customers.find(c =>
+            (c.email && c.email === customerData.email && customerData.email !== '') ||
+            (c.phone && c.phone === customerData.phone && customerData.phone !== '') ||
+            (c.firstName === customerData.firstName && c.lastName === customerData.lastName && customerData.firstName !== '')
+        );
+
+        if (!existingCustomer) {
+            customers.push(customerData);
+            saveCustomers(customers);
+            renderCustomerList(); // Aktualisiere die Kundenliste in der UI
+        }
+    }
+
+    createInvoiceReminders(data); // NEU: Erinnerungen erstellen
 }
 
 // NEU: Funktion zum Erstellen von Rechnungserinnerungen
@@ -1267,13 +1417,13 @@ function createInvoiceReminders(invoiceData) {
     // Optional: updateReminderNotificationUI(); if you want to immediately reflect new reminders in the dropdown
 }
 
-if(saveInvoiceBtn) saveInvoiceBtn.onclick = ()=>{
-  if(enableSequence && enableSequence.checked && (!invoiceNumberEl.value || invoiceNumberEl.value.startsWith('R-'))){
-    invoiceNumberEl.value = nextInvoiceNumber()
-  }
-  saveInvoice();
-  alert('Rechnung gespeichert!');
-  renderSavedInvoices(); 
+if (saveInvoiceBtn) saveInvoiceBtn.onclick = () => {
+    if (enableSequence && enableSequence.checked && (!invoiceNumberEl.value || invoiceNumberEl.value.startsWith('R-'))) {
+        invoiceNumberEl.value = nextInvoiceNumber()
+    }
+    saveInvoice();
+    alert('Rechnung gespeichert!');
+    renderSavedInvoices();
 }
 
 
@@ -1545,7 +1695,7 @@ function getOverdueInvoicesCount() {
 
 function renderSavedInvoices() {
     if (!savedInvoicesBody) return;
-    
+
     let invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
     const period = periodFilter.value;
 
@@ -1629,7 +1779,7 @@ function renderSavedInvoices() {
             </tr>
         `;
     }).join('');
-    
+
     if (window.lucide) window.lucide.createIcons();
 
     savedInvoicesBody.querySelectorAll('.status-select').forEach(sel => {
@@ -1661,78 +1811,78 @@ function renderSavedInvoices() {
     });
 }
 
-if(searchInput) searchInput.oninput = renderSavedInvoices;
-if(statusFilter) statusFilter.onchange = renderSavedInvoices;
-if(periodFilter) periodFilter.onchange = renderSavedInvoices;
-if(sortInvoices) sortInvoices.onchange = renderSavedInvoices;
+if (searchInput) searchInput.oninput = renderSavedInvoices;
+if (statusFilter) statusFilter.onchange = renderSavedInvoices;
+if (periodFilter) periodFilter.onchange = renderSavedInvoices;
+if (sortInvoices) sortInvoices.onchange = renderSavedInvoices;
 
 
-function loadInvoice(number){
-  const list = JSON.parse(localStorage.getItem('invoices')||'[]')
-  const inv = list.find(i=>i.number === number)
-  if(!inv){ alert('Rechnung nicht gefunden') ; return }
+function loadInvoice(number) {
+    const list = JSON.parse(localStorage.getItem('invoices') || '[]')
+    const inv = list.find(i => i.number === number)
+    if (!inv) { alert('Rechnung nicht gefunden'); return }
 
-  // Set invoice type radio button
-  const invoiceType = inv.invoiceType || 'full';
-  const radioBtn = document.querySelector(`input[name="invoiceType"][value="${invoiceType}"]`);
-  if (radioBtn) radioBtn.checked = true;
-  
-  // Update form display based on type. Call this before populating fields.
-  updateInvoiceFormDisplay();
+    // Set invoice type radio button
+    const invoiceType = inv.invoiceType || 'full';
+    const radioBtn = document.querySelector(`input[name="invoiceType"][value="${invoiceType}"]`);
+    if (radioBtn) radioBtn.checked = true;
 
-  invoiceNumberEl.value = inv.number; invoiceDateEl.value = inv.date
-  document.getElementById('from').value = inv.from || ''; document.getElementById('to').value = inv.to || ''
-  document.getElementById('note').value = inv.note || ''; document.getElementById('payment').value = inv.payment || ''
-  
-  const paymentMethodEl = document.getElementById('paymentMethod');
-  if (paymentMethodEl) {
-      paymentMethodEl.value = inv.paymentMethod || 'Überweisung'; 
-  }
-  
-  passengerBody.innerHTML = ''; outboundBody.innerHTML = ''; itemsBody.innerHTML = ''
-  
-  returnSectionContainer.innerHTML = `<button class="btn btn-text" id="addReturnSection"><i data-lucide="corner-down-left"></i>Rückflug-Option hinzufügen</button>`;
-  document.getElementById('addReturnSection').onclick = addReturnSectionBtn.onclick;
-  if(window.lucide) window.lucide.createIcons();
-  
-  // ========== START: GEPÄCK-ÄNDERUNG (Laden) ==========
-  // Rufe die NEUE addPassenger-Funktion auf, die das Gepäck-Objekt verarbeiten kann
-  (inv.passengers||[]).forEach(p=>addPassenger(p.name, p.dob, p.baggage))
-  // ========== ENDE: GEPÄCK-ÄNDERUNG (Laden) ==========
-  
-  ;(inv.outbound||[]).forEach(f=>addFlightRow('outboundBody',f.fromCity,f.toCity,f.depDate,f.depTime,f.arrDate,f.arrTime,f.airline,f.pnr, f.duration))
-  
-  if(inv.returns && inv.returns.length){
-    if(!document.getElementById('returnSection')) addReturnSectionBtn.onclick()
-    setTimeout(() => { 
-      inv.returns.forEach(f=>addFlightRow('returnBody',f.fromCity,f.toCity,f.depDate,f.depTime,f.arrDate,f.arrTime,f.airline,f.pnr,f.duration));
-      const totalReturnEl = document.getElementById('totalReturnDuration');
-      if (inv.totalReturnDuration && totalReturnEl) {
-        totalReturnEl.value = inv.totalReturnDuration;
-      }
-    }, 0);
-  }
+    // Update form display based on type. Call this before populating fields.
+    updateInvoiceFormDisplay();
 
-  const totalOutboundEl = document.getElementById('totalOutboundDuration');
-  if (inv.totalOutboundDuration && totalOutboundEl) {
-    totalOutboundEl.value = inv.totalOutboundDuration;
-  }
+    invoiceNumberEl.value = inv.number; invoiceDateEl.value = inv.date
+    document.getElementById('from').value = inv.from || ''; document.getElementById('to').value = inv.to || ''
+    document.getElementById('note').value = inv.note || ''; document.getElementById('payment').value = inv.payment || ''
 
-  (inv.items||[]).forEach(it=>addItem(it.desc,it.qty,it.price,it.option))
-  logoData = inv.logo || ''
-  if (inv.bgSettings) {
-    bgToggle.checked = inv.bgSettings.enabled; bgSize.value = inv.bgSettings.size
-    bgOpacity.value = inv.bgSettings.opacity; bgColor.value = inv.bgSettings.color
-    bgColorOpacity.value = inv.bgSettings.colorOpacity;
-    headingColorEl.value = inv.bgSettings.headingColor || '#556B2F';
-  }
-  if (inv.vatSettings) {
-    enableVatEl.checked = inv.vatSettings.enableVat;
-    vatRateEl.value = inv.vatSettings.vatRate;
-  }
-  applyBackgroundSettings(); 
-  toggleBankDetails(); 
-  updatePreview()
+    const paymentMethodEl = document.getElementById('paymentMethod');
+    if (paymentMethodEl) {
+        paymentMethodEl.value = inv.paymentMethod || 'Überweisung';
+    }
+
+    passengerBody.innerHTML = ''; outboundBody.innerHTML = ''; itemsBody.innerHTML = ''
+
+    returnSectionContainer.innerHTML = `<button class="btn btn-text" id="addReturnSection"><i data-lucide="corner-down-left"></i>Rückflug-Option hinzufügen</button>`;
+    document.getElementById('addReturnSection').onclick = addReturnSectionBtn.onclick;
+    if (window.lucide) window.lucide.createIcons();
+
+    // ========== START: GEPÄCK-ÄNDERUNG (Laden) ==========
+    // Rufe die NEUE addPassenger-Funktion auf, die das Gepäck-Objekt verarbeiten kann
+    (inv.passengers || []).forEach(p => addPassenger(p.name, p.dob, p.baggage))
+        // ========== ENDE: GEPÄCK-ÄNDERUNG (Laden) ==========
+
+        ; (inv.outbound || []).forEach(f => addFlightRow('outboundBody', f.fromCity, f.toCity, f.depDate, f.depTime, f.arrDate, f.arrTime, f.airline, f.pnr, f.duration))
+
+    if (inv.returns && inv.returns.length) {
+        if (!document.getElementById('returnSection')) addReturnSectionBtn.onclick()
+        setTimeout(() => {
+            inv.returns.forEach(f => addFlightRow('returnBody', f.fromCity, f.toCity, f.depDate, f.depTime, f.arrDate, f.arrTime, f.airline, f.pnr, f.duration));
+            const totalReturnEl = document.getElementById('totalReturnDuration');
+            if (inv.totalReturnDuration && totalReturnEl) {
+                totalReturnEl.value = inv.totalReturnDuration;
+            }
+        }, 0);
+    }
+
+    const totalOutboundEl = document.getElementById('totalOutboundDuration');
+    if (inv.totalOutboundDuration && totalOutboundEl) {
+        totalOutboundEl.value = inv.totalOutboundDuration;
+    }
+
+    (inv.items || []).forEach(it => addItem(it.desc, it.qty, it.price, it.option))
+    logoData = inv.logo || ''
+    if (inv.bgSettings) {
+        bgToggle.checked = inv.bgSettings.enabled; bgSize.value = inv.bgSettings.size
+        bgOpacity.value = inv.bgSettings.opacity; bgColor.value = inv.bgSettings.color
+        bgColorOpacity.value = inv.bgSettings.colorOpacity;
+        headingColorEl.value = inv.bgSettings.headingColor || '#556B2F';
+    }
+    if (inv.vatSettings) {
+        enableVatEl.checked = inv.vatSettings.enableVat;
+        vatRateEl.value = inv.vatSettings.vatRate;
+    }
+    applyBackgroundSettings();
+    toggleBankDetails();
+    updatePreview()
 }
 // --- Invoice Settings Save/Load ---
 const INVOICE_SETTINGS_KEY = 'invoiceSettings';
@@ -1808,7 +1958,7 @@ function loadInvoiceSettings() {
     if (settings.contactPhone && document.getElementById('contactPhone')) {
         document.getElementById('contactPhone').value = settings.contactPhone;
     }
-    
+
     applyBackgroundSettings(); // Re-apply background settings after loading
     toggleBankDetails(); // Update bank details visibility
 }
@@ -1826,11 +1976,11 @@ if (vatRateEl) {
     vatRateEl.oninput = () => { updatePreview(); saveInvoiceSettings(); };
 }
 
-function loadInvoiceAndDownload(number){ 
-    loadInvoice(number); 
-    setTimeout(()=>downloadPDFBtn.click(), 500);
+function loadInvoiceAndDownload(number) {
+    loadInvoice(number);
+    setTimeout(() => downloadPDFBtn.click(), 500);
 }
-window.addEventListener('beforeunload', ()=>{ saveSequenceState(getSequenceState()) });
+window.addEventListener('beforeunload', () => { saveSequenceState(getSequenceState()) });
 
 
 // --- KUNDEN-SEITE ---
@@ -1845,46 +1995,46 @@ function saveCustomers(customers) { localStorage.setItem('customers', JSON.strin
 
 if (customerForm) {
     customerForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const customers = getCustomers();
-      const customerData = {
-        id: customerIdEl.value || `cust_${Date.now()}`,
-        firstName: document.getElementById('custFirstName').value,
-        lastName: document.getElementById('custLastName').value,
-        phone: document.getElementById('custPhone').value,
-        email: document.getElementById('custEmail').value,
-        dob: document.getElementById('custDob').value,
-        passportNum: document.getElementById('custPassportNum').value,
-        passportExp: document.getElementById('custPassportExp').value,
-      };
-      
-      const existingIndex = customers.findIndex(c => c.id === customerData.id);
-      if (existingIndex >= 0) customers[existingIndex] = customerData;
-      else customers.push(customerData);
+        e.preventDefault();
+        const customers = getCustomers();
+        const customerData = {
+            id: customerIdEl.value || `cust_${Date.now()}`,
+            firstName: document.getElementById('custFirstName').value,
+            lastName: document.getElementById('custLastName').value,
+            phone: document.getElementById('custPhone').value,
+            email: document.getElementById('custEmail').value,
+            dob: document.getElementById('custDob').value,
+            passportNum: document.getElementById('custPassportNum').value,
+            passportExp: document.getElementById('custPassportExp').value,
+        };
 
-      saveCustomers(customers);
-      alert('Kunde gespeichert!');
-      customerForm.reset();
-      customerIdEl.value = '';
-      renderCustomerList();
+        const existingIndex = customers.findIndex(c => c.id === customerData.id);
+        if (existingIndex >= 0) customers[existingIndex] = customerData;
+        else customers.push(customerData);
+
+        saveCustomers(customers);
+        alert('Kunde gespeichert!');
+        customerForm.reset();
+        customerIdEl.value = '';
+        renderCustomerList();
     });
 }
-if(clearCustomerFormBtn) clearCustomerFormBtn.onclick = () => { customerForm.reset(); customerIdEl.value = ''; };
-if(customerSearchEl) customerSearchEl.oninput = () => renderCustomerList();
+if (clearCustomerFormBtn) clearCustomerFormBtn.onclick = () => { customerForm.reset(); customerIdEl.value = ''; };
+if (customerSearchEl) customerSearchEl.oninput = () => renderCustomerList();
 
 function renderCustomerList() {
-  if (!customerListEl) return;
-  const customers = getCustomers().sort((a,b) => (a.lastName || "").localeCompare(b.lastName || ""));
-  const searchTerm = customerSearchEl.value.toLowerCase();
+    if (!customerListEl) return;
+    const customers = getCustomers().sort((a, b) => (a.lastName || "").localeCompare(b.lastName || ""));
+    const searchTerm = customerSearchEl.value.toLowerCase();
 
-  const filtered = searchTerm
-    ? customers.filter(c => `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchTerm))
-    : customers;
+    const filtered = searchTerm
+        ? customers.filter(c => `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchTerm))
+        : customers;
 
-  if (filtered.length === 0) {
-    customerListEl.innerHTML = '<p>Keine Kunden gefunden.</p>'; return;
-  }
-  customerListEl.innerHTML = filtered.map(cust => `
+    if (filtered.length === 0) {
+        customerListEl.innerHTML = '<p>Keine Kunden gefunden.</p>'; return;
+    }
+    customerListEl.innerHTML = filtered.map(cust => `
     <div class="saved-inv">
       <div><b>${escapeHtml(cust.lastName)}, ${escapeHtml(cust.firstName)}</b><br><small>${escapeHtml(cust.email || '')}</small></div>
       <div class="card-actions">
@@ -1893,61 +2043,61 @@ function renderCustomerList() {
         <button class="btn btn-icon danger delete-customer" data-id="${cust.id}"><i data-lucide="trash-2"></i></button>
       </div>
     </div>`
-  ).join('');
-  
-  if(window.lucide) window.lucide.createIcons();
+    ).join('');
 
-  customerListEl.querySelectorAll('.edit-customer').forEach(b => {
-    b.onclick = () => {
-      const cust = getCustomers().find(c => c.id === b.dataset.id);
-      if (cust) {
-        customerIdEl.value = cust.id;
-        document.getElementById('custFirstName').value = cust.firstName;
-        document.getElementById('custLastName').value = cust.lastName;
-        document.getElementById('custPhone').value = cust.phone;
-        document.getElementById('custEmail').value = cust.email;
-        document.getElementById('custDob').value = cust.dob;
-        document.getElementById('custPassportNum').value = cust.passportNum;
-        document.getElementById('custPassportExp').value = cust.passportExp;
-        window.scrollTo(0, 0);
-      }
-    };
-  });
-  
-  customerListEl.querySelectorAll('.delete-customer').forEach(b => {
-    b.onclick = () => {
-      if (confirm('Soll dieser Kunde wirklich gelöscht werden?')) {
-        let customers = getCustomers();
-        customers = customers.filter(c => c.id !== b.dataset.id);
-        saveCustomers(customers);
-        renderCustomerList();
-      }
-    };
-  });
+    if (window.lucide) window.lucide.createIcons();
 
-  customerListEl.querySelectorAll('.select-customer').forEach(b => {
-    b.onclick = () => {
-      const cust = getCustomers().find(c => c.id === b.dataset.id);
-      if (cust) {
-        document.getElementById('to').value = `${cust.firstName} ${cust.lastName}`;
-        document.getElementById('customerEmail').value = cust.email || '';
-        document.getElementById('customerPhone').value = cust.phone || '';
-        passengerBody.innerHTML = '';
-        addPassenger(`${cust.firstName} ${cust.lastName}`, cust.dob); // Fügt Passagier ohne Gepäck hinzu
-        showPage('invoices');
-        updatePreview();
-      }
-    };
-  });
+    customerListEl.querySelectorAll('.edit-customer').forEach(b => {
+        b.onclick = () => {
+            const cust = getCustomers().find(c => c.id === b.dataset.id);
+            if (cust) {
+                customerIdEl.value = cust.id;
+                document.getElementById('custFirstName').value = cust.firstName;
+                document.getElementById('custLastName').value = cust.lastName;
+                document.getElementById('custPhone').value = cust.phone;
+                document.getElementById('custEmail').value = cust.email;
+                document.getElementById('custDob').value = cust.dob;
+                document.getElementById('custPassportNum').value = cust.passportNum;
+                document.getElementById('custPassportExp').value = cust.passportExp;
+                window.scrollTo(0, 0);
+            }
+        };
+    });
+
+    customerListEl.querySelectorAll('.delete-customer').forEach(b => {
+        b.onclick = () => {
+            if (confirm('Soll dieser Kunde wirklich gelöscht werden?')) {
+                let customers = getCustomers();
+                customers = customers.filter(c => c.id !== b.dataset.id);
+                saveCustomers(customers);
+                renderCustomerList();
+            }
+        };
+    });
+
+    customerListEl.querySelectorAll('.select-customer').forEach(b => {
+        b.onclick = () => {
+            const cust = getCustomers().find(c => c.id === b.dataset.id);
+            if (cust) {
+                document.getElementById('to').value = `${cust.firstName} ${cust.lastName}`;
+                document.getElementById('customerEmail').value = cust.email || '';
+                document.getElementById('customerPhone').value = cust.phone || '';
+                passengerBody.innerHTML = '';
+                addPassenger(`${cust.firstName} ${cust.lastName}`, cust.dob); // Fügt Passagier ohne Gepäck hinzu
+                showPage('invoices');
+                updatePreview();
+            }
+        };
+    });
 }
 
 const printPDFBtn = document.getElementById('printPDF');
 if (printPDFBtn) {
     printPDFBtn.onclick = () => {
-      updatePreview();
-      setTimeout(() => {
-        window.print();
-      }, 100);
+        updatePreview();
+        setTimeout(() => {
+            window.print();
+        }, 100);
     };
 }
 
@@ -1978,135 +2128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- PERCENTAGE CALCULATOR LOGIC ---
-document.addEventListener('DOMContentLoaded', () => {
-    if (!document.getElementById('pageCalculatorSettings')) return;
 
-    const defaultPercentages = {
-        '0-150': 20,
-        '151-300': 17.833333,
-        '301-450': 15.666667,
-        '451-600': 13.5,
-        '601-750': 11.333333,
-        '751-900': 9.166667,
-        '901-1050': 7,
-        '1051+': 6
-    };
-
-    const calcInput = document.getElementById('calcInput');
-    const clearCalcInputBtn = document.getElementById('clearCalcInput');
-    const resultWrapper = document.getElementById('calcResultWrapper');
-    const resultEl = document.getElementById('calcResult');
-    const percentageNoteEl = document.getElementById('calcPercentageNote');
-    const copyBtn = document.getElementById('copyCalcResult');
-    const settingsGrid = document.getElementById('percentageSettingsGrid');
-    const resetBtn = document.getElementById('resetPercentages');
-
-    let percentageInputs = {};
-
-    // --- Main Calculation Logic ---
-    function calculate() {
-        const rawValue = parseFloat(calcInput.value);
-
-        if (isNaN(rawValue) || rawValue <= 0) {
-            resultWrapper.style.display = 'none';
-            clearCalcInputBtn.style.display = 'none';
-            return;
-        }
-
-        clearCalcInputBtn.style.display = 'block';
-        resultWrapper.style.display = 'block';
-
-        let percentage = 0;
-        let appliedTier = '';
-
-        const tiers = Object.keys(percentageInputs).sort((a, b) => {
-            return parseInt(a.split('-')[0]) - parseInt(b.split('-')[0]);
-        });
-
-        for (const tier of tiers) {
-            const currentPercentage = parseFloat(percentageInputs[tier].value) || 0;
-            if (tier.includes('+')) {
-                const lower = parseInt(tier.replace('+', ''));
-                if (rawValue >= lower) {
-                    percentage = currentPercentage;
-                    appliedTier = tier;
-                }
-            } else {
-                const [lower, upper] = tier.split('-').map(Number);
-                if (rawValue >= lower && rawValue <= upper) {
-                    percentage = currentPercentage;
-                    appliedTier = tier;
-                }
-            }
-        }
-
-        const finalValue = rawValue + (rawValue * (percentage / 100));
-
-        const formatter = new Intl.NumberFormat('de-DE', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-
-        resultEl.textContent = formatter.format(finalValue);
-        percentageNoteEl.textContent = `${formatter.format(percentage)}% hinzugefügt (Stufe: ${appliedTier})`;
-    }
-
-    // --- Setup and Event Listeners ---
-    function setupCalculator() {
-        // 1. Populate settings grid
-        settingsGrid.innerHTML = '';
-        Object.entries(defaultPercentages).forEach(([tier, value]) => {
-            const item = document.createElement('div');
-            item.className = 'percentage-item';
-            
-            const label = document.createElement('label');
-            label.textContent = `Stufe ${tier}`;
-            
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.step = 'any';
-            input.value = value;
-            input.dataset.tier = tier;
-            input.addEventListener('input', calculate);
-
-            item.appendChild(label);
-            item.appendChild(input);
-            settingsGrid.appendChild(item);
-
-            percentageInputs[tier] = input;
-        });
-
-        // 2. Attach event listeners
-        calcInput.addEventListener('input', calculate);
-        clearCalcInputBtn.addEventListener('click', () => {
-            calcInput.value = '';
-            calculate();
-        });
-
-        copyBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(resultEl.textContent).then(() => {
-                showToast('Ergebnis erfolgreich kopiert!');
-            }).catch(err => {
-                showToast('Kopieren fehlgeschlagen!');
-                console.error('Failed to copy: ', err);
-            });
-        });
-
-        resetBtn.addEventListener('click', () => {
-            Object.entries(defaultPercentages).forEach(([tier, value]) => {
-                percentageInputs[tier].value = value;
-            });
-            calculate();
-            showToast('Standardwerte wiederhergestellt.');
-        });
-
-        // Initial calculation
-        calculate();
-    }
-
-    setupCalculator();
-});
 
 
 // --- REMINDER LOGIC (V3) ---
@@ -2206,12 +2228,12 @@ function addNotificationRule(type = 'at_due_date', value = '') {
     };
 
     typeSelect.onchange = handleTypeChange;
-    
+
     ruleDiv.appendChild(typeSelect);
     ruleDiv.appendChild(valueInput);
     ruleDiv.appendChild(removeBtn);
     notificationRulesContainer.appendChild(ruleDiv);
-    
+
     if (value) valueInput.value = value;
     handleTypeChange();
 
@@ -2244,7 +2266,7 @@ function renderReminders() {
     remindersListEl.innerHTML = reminders.map(rem => {
         const isAufgabe = rem.type === 'Aufgabe';
         const typeIcon = isAufgabe ? 'clipboard-check' : 'bell';
-        
+
         const notificationsHtml = rem.notifications.map(n => {
             let text = 'Zum Fälligkeitsdatum';
             if (n.type === 'hours_before') text = `${n.value} Stunde(n) vorher`;
@@ -2341,12 +2363,12 @@ function loadReminderForEdit(id) {
     } else {
         addNotificationRule(); // Ensure at least one rule is present
     }
-    
+
 
     // Change button text and icon
     addReminderBtn.querySelector('span').textContent = 'Änderungen speichern';
     addReminderBtn.querySelector('i').setAttribute('data-lucide', 'save');
-    if(window.lucide) window.lucide.createIcons();
+    if (window.lucide) window.lucide.createIcons();
 
     addReminderBtn.classList.remove('btn-primary');
     addReminderBtn.classList.add('btn-secondary');
@@ -2388,11 +2410,11 @@ if (addReminderBtn) {
                 showToast('Bitte geben Sie einen gültigen Wert für die Benachrichtigungsregel ein.', 'error');
                 return; // Stop processing and alert user
             }
-            
+
             // Assign a unique ID to each rule for tracking
             notificationRules.push({ id: `notif_${Date.now()}_${Math.random()}`, type, value, triggered: false });
         });
-        
+
         if (notificationRules.length === 0) {
             showToast('Bitte fügen Sie mindestens eine Benachrichtigungsregel hinzu.', 'error');
             return;
@@ -2431,12 +2453,296 @@ if (addReminderBtn) {
             currentReminders.push(newEntry);
             showToast(`${type} hinzugefügt!`);
         }
-        
+
         saveReminders(currentReminders);
         resetReminderForm();
         renderReminders();
     });
+
+
 }
+
+// --- REISEPLAN (TRAVEL PLAN) PAGE LOGIC ---
+// Make globally accessible for showPage
+window.pageTravelPlan = document.getElementById('pageTravelPlan');
+const dropdownTravelPlan = document.getElementById('dropdownTravelPlan');
+const tpFlightsBody = document.getElementById('travelPlanFlightsBody');
+const tpPassengersBody = document.getElementById('travelPlanPassengersBody');
+const tpTotalOutbound = document.getElementById('tpTotalDurationOutbound');
+const tpTotalReturn = document.getElementById('tpTotalDurationReturn');
+const downloadTpImageBtn = document.getElementById('downloadTravelPlanImage');
+
+if (dropdownTravelPlan) {
+    dropdownTravelPlan.onclick = () => {
+        showPage('travel_plan');
+        const pageTitle = document.getElementById('page-title');
+        if (pageTitle) pageTitle.textContent = 'Reiseplan erstellen';
+        fabDropdown.classList.remove('show');
+    };
+}
+
+window.initTravelPlan = function () {
+    // Add default rows if empty
+    if (tpFlightsBody && tpFlightsBody.children.length === 0) {
+        addTravelPlanFlightRow();
+    }
+    if (tpPassengersBody && tpPassengersBody.children.length === 0) {
+        addTravelPlanPassengerRow();
+    }
+}
+
+// Add Flight Row
+const addTpFlightBtn = document.getElementById('addTravelPlanFlight');
+if (addTpFlightBtn) {
+    addTpFlightBtn.onclick = addTravelPlanFlightRow;
+}
+
+function addTravelPlanFlightRow() {
+    const row = document.createElement('tr');
+
+    // Default Values (Now and Now + 2h)
+    const now = new Date();
+    const arrival = new Date(now.getTime() + 2 * 60 * 60 * 1000); // +2 hours
+
+    const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+    const timeOptions = { hour: '2-digit', minute: '2-digit' };
+
+    const nowDateStr = now.toLocaleDateString('de-DE', dateOptions);
+    const nowTimeStr = now.toLocaleTimeString('de-DE', timeOptions);
+
+    const arrDateStr = arrival.toLocaleDateString('de-DE', dateOptions);
+    const arrTimeStr = arrival.toLocaleTimeString('de-DE', timeOptions);
+
+    row.innerHTML = `
+        <td><input class="tp-airline" placeholder="Airline"></td>
+        <td><input class="tp-pnr" placeholder="Flugnummer"></td>
+        <td><input class="tp-from" placeholder="Von (Stadt/Flughafen)"></td>
+        <td><input class="tp-to" placeholder="Nach (Stadt/Flughafen)"></td>
+        <td>
+           <input type="text" class="tp-dep-date" placeholder="Datum" value="${nowDateStr}">
+           <input type="text" class="tp-dep-time" placeholder="Zeit" value="${nowTimeStr}">
+        </td>
+        <td>
+           <input type="text" class="tp-arr-date" placeholder="Datum" value="${arrDateStr}">
+           <input type="text" class="tp-arr-time" placeholder="Zeit" value="${arrTimeStr}">
+        </td>
+        <td><input class="tp-duration" placeholder="Dauer" value="2h 00m"></td>
+        <td class="actions-cell">
+             <button class="btn btn-icon danger remove-tp-row"><i data-lucide="trash-2"></i></button>
+        </td>
+    `;
+    tpFlightsBody.appendChild(row);
+    lucide.createIcons();
+
+    // Attach listeners
+    row.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', updateTravelPlanPreview);
+    });
+    row.querySelector('.remove-tp-row').onclick = () => {
+        row.remove();
+        updateTravelPlanPreview();
+    };
+    updateTravelPlanPreview();
+
+    // Update Total Duration (Simple Auto-Calc/Suggest)
+    // We only do this if the field is empty to respect manual edits, or maybe just once here?
+    // User said: "choose total duration ... by default".
+    // Let's set it if empty.
+    const totalOut = document.getElementById('tpTotalDurationOutbound');
+    if (totalOut && !totalOut.value) {
+        totalOut.value = "2h 00m"; // Default for first flight
+    }
+}
+
+// Add Passenger Row
+const addTpPassengerBtn = document.getElementById('addTravelPlanPassenger');
+if (addTpPassengerBtn) {
+    addTpPassengerBtn.onclick = addTravelPlanPassengerRow;
+}
+
+function addTravelPlanPassengerRow() {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input class="tp-res-name" placeholder="Vorname Nachname"></td>
+        <td class="actions-cell">
+             <button class="btn btn-icon danger remove-tp-row"><i data-lucide="trash-2"></i></button>
+        </td>
+    `;
+    tpPassengersBody.appendChild(row);
+    lucide.createIcons();
+
+    // Attach listeners
+    row.querySelector('input').addEventListener('input', updateTravelPlanPreview);
+    row.querySelector('.remove-tp-row').onclick = () => {
+        row.remove();
+        updateTravelPlanPreview();
+    };
+    updateTravelPlanPreview();
+}
+
+if (tpTotalOutbound) tpTotalOutbound.addEventListener('input', updateTravelPlanPreview);
+if (tpTotalReturn) tpTotalReturn.addEventListener('input', updateTravelPlanPreview);
+
+
+function updateTravelPlanPreview() {
+    const previewContainer = document.getElementById('travelPlanPreview');
+    if (!previewContainer) return;
+
+    // Collect Data
+    const flights = [...tpFlightsBody.querySelectorAll('tr')].map(row => {
+        return {
+            airline: row.querySelector('.tp-airline').value,
+            pnr: row.querySelector('.tp-pnr').value,
+            fromCity: row.querySelector('.tp-from').value,
+            toCity: row.querySelector('.tp-to').value,
+            depDate: row.querySelector('.tp-dep-date').value,
+            depTime: row.querySelector('.tp-dep-time').value,
+            arrDate: row.querySelector('.tp-arr-date').value,
+            arrTime: row.querySelector('.tp-arr-time').value,
+            duration: row.querySelector('.tp-duration').value
+        };
+    });
+
+    const passengers = [...tpPassengersBody.querySelectorAll('.tp-res-name')].map(i => i.value).filter(v => v);
+    const totalDurationOut = tpTotalOutbound.value;
+    const totalDurationRet = tpTotalReturn.value;
+
+    // Parse Date Helper (DD.MM.YYYY HH:MM)
+    const parseDateTime = (dStr, tStr) => {
+        if (!dStr || !tStr) return null;
+        try {
+            const parts = dStr.split('.');
+            if (parts.length !== 3) return null;
+            const timeParts = tStr.split(':');
+            if (timeParts.length < 2) return null;
+            // new Date(year, monthIndex, day, hours, minutes)
+            return new Date(parts[2], parts[1] - 1, parts[0], timeParts[0], timeParts[1]);
+        } catch (e) { return null; }
+    };
+
+    let flightHtml = '';
+    flights.forEach((f, i) => {
+        if (!f.fromCity && !f.toCity) return; // Skip empty
+
+        // Render Flight Card
+        flightHtml += `
+        <div class="travel-plan-card">
+            <div class="travel-segment-header">
+                <div class="ts-airline"><span class="badge">${escapeHtml(f.airline || 'Flug')}</span> <span class="ts-pnr">${escapeHtml(f.pnr || '')}</span></div>
+                <div class="ts-duration"><i data-lucide="clock" class="icon-xs"></i> ${escapeHtml(f.duration)}</div>
+            </div>
+            <div class="travel-segment-route">
+                <div class="ts-city-group">
+                    <div class="ts-city">${escapeHtml(f.fromCity)}</div>
+                    <div class="ts-time">${escapeHtml(f.depTime)}</div>
+                    <div class="ts-date">${escapeHtml(f.depDate)}</div>
+                </div>
+                <div class="ts-arrow">
+                    <div class="ts-line"></div>
+                    <i data-lucide="plane" class="icon-rotate-90"></i>
+                    <div class="ts-line"></div>
+                </div>
+                <div class="ts-city-group right">
+                    <div class="ts-city">${escapeHtml(f.toCity)}</div>
+                    <div class="ts-time">${escapeHtml(f.arrTime)}</div>
+                    <div class="ts-date">${escapeHtml(f.arrDate)}</div>
+                </div>
+            </div>
+        </div>`;
+
+        // Calculate Layover if there is a next flight
+        if (i < flights.length - 1) {
+            const nextF = flights[i + 1];
+            if (nextF.fromCity || nextF.toCity) { // Only if next flight exists/valid
+                const arrDT = parseDateTime(f.arrDate, f.arrTime);
+                const depDT = parseDateTime(nextF.depDate, nextF.depTime);
+
+                if (arrDT && depDT) {
+                    const diffMs = depDT - arrDT;
+                    if (diffMs > 0) {
+                        const diffMins = Math.floor(diffMs / 60000);
+                        const hours = Math.floor(diffMins / 60);
+                        const mins = diffMins % 60;
+                        const layoverText = `${hours}h ${mins}m`;
+
+                        flightHtml += `
+                        <div class="travel-plan-layover">
+                            <i data-lucide="coffee" class="icon-sm"></i>
+                            <span>Aufenthalt in ${escapeHtml(f.toCity)}: ${layoverText}</span>
+                        </div>`;
+                    }
+                }
+            }
+        }
+    });
+
+    let passengerHtml = '';
+    if (passengers.length > 0) {
+        passengerHtml = `<div class="travel-passengers">
+            <div class="tp-label">Reisende:</div>
+            <div class="tp-list">${passengers.map(p => escapeHtml(p)).join(', ')}</div>
+        </div>`;
+    }
+
+    previewContainer.innerHTML = `
+    <div class="travel-plan-container">
+        <div class="travel-plan-header">
+            <div class="tp-brand">
+                <i data-lucide="plane" class="tp-logo-icon"></i>
+                <span>URLAUB</span>
+            </div>
+            <h1>Reiseplan</h1>
+            ${passengerHtml}
+        </div>
+        
+        <div class="travel-plan-body">
+            ${flightHtml}
+        </div>
+
+        <div class="travel-plan-footer">
+            <div class="tp-footer-row">
+                <span>GESAMTREISEZEIT</span>
+                <span class="tp-total-time">${escapeHtml(totalDurationOut || '---')}</span>
+            </div>
+            ${totalDurationRet ? `
+            <div class="tp-footer-row">
+                <span>GESAMTREISEZEIT (Rückflug/Gesamt)</span>
+                <span class="tp-total-time">${escapeHtml(totalDurationRet)}</span>
+            </div>` : ''}
+        </div>
+    </div>`;
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+if (downloadTpImageBtn) {
+    downloadTpImageBtn.onclick = async () => {
+        updateTravelPlanPreview();
+        const element = document.querySelector('#travelPlanPreview .travel-plan-container');
+        if (!element) {
+            alert('Keine Vorschau verfügbar.');
+            return;
+        }
+
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: null,
+                logging: false
+            });
+
+            const link = document.createElement('a');
+            link.download = `Reiseplan_${new Date().toISOString().slice(0, 10)}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) {
+            console.error(err);
+            alert('Fehler beim Speichern des Bildes.');
+        }
+    };
+}
+
 
 // NEU: Funktion zum Zurücksetzen des Erinnerungsformulars
 function resetReminderForm() {
@@ -2447,10 +2753,10 @@ function resetReminderForm() {
     reminderTimeEl.value = '';
     notificationRulesContainer.innerHTML = '';
     addNotificationRule(); // Add one default rule
-    
+
     addReminderBtn.querySelector('span').textContent = 'Eintrag hinzufügen';
     addReminderBtn.querySelector('i').setAttribute('data-lucide', 'plus');
-    if(window.lucide) window.lucide.createIcons();
+    if (window.lucide) window.lucide.createIcons();
 
     addReminderBtn.classList.remove('btn-secondary');
     addReminderBtn.classList.add('btn-primary');
@@ -2513,7 +2819,7 @@ function updateReminderNotificationUI() {
     if (!reminderCountEl || !notificationRemindersListEl) return;
 
     const triggeredNotifications = getTriggeredNotifications();
-    
+
     reminderCountEl.textContent = triggeredNotifications.length;
     reminderCountEl.style.display = triggeredNotifications.length > 0 ? 'flex' : 'none';
 
@@ -2529,7 +2835,7 @@ function updateReminderNotificationUI() {
             </div>
         `).join('');
     }
-    
+
     // Add "Clear All" button if not present
     let clearBtn = reminderNotificationDropdown.querySelector('.clear-all-notifications');
     if (!clearBtn) {
@@ -2542,7 +2848,7 @@ function updateReminderNotificationUI() {
         };
         // Insert it in the footer
         const footer = reminderNotificationDropdown.querySelector('.notification-footer');
-        if(footer) footer.prepend(clearBtn);
+        if (footer) footer.prepend(clearBtn);
     }
 }
 
@@ -2585,10 +2891,10 @@ document.addEventListener('DOMContentLoaded', () => {
         Notification.requestPermission();
     }
 
-    if(document.getElementById('pageReminders')) {
+    if (document.getElementById('pageReminders')) {
         resetReminderForm(); // Initialize form with a default rule and reset state
     }
-    
+
     renderReminders();
     updateReminderNotificationUI();
 
