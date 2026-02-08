@@ -272,10 +272,13 @@ body.dark-mode #darkModeToggle .icon-dark {
     /* Change border to top */
     overflow-y: auto;
     /* Allow preview pane to scroll */
+    overflow-x: auto;
+    /* Allow horizontal scrolling */
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
+    /* Prevent clipping when content overflows, children use margin:auto for centering */
     gap: 1rem;
     flex-shrink: 0;
     /* Prevent shrinking */
@@ -1937,9 +1940,10 @@ body.dark-mode .settings-card {
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
 
 .travel-plan-container {
-    width: 100%;
-    max-width: 210mm;
-    /* A4 width */
+    width: 210mm;
+    /* Fixed A4 width */
+    max-width: none;
+    /* Allow it to be full width within scrollable container */
     margin: 0 auto;
     background-color: #fDfDfA;
     /* Off-white paper look */
@@ -2200,32 +2204,9 @@ body.dark-mode .settings-card {
 }
 
 /* Mobile optimization for preview */
-@media (max-width: 600px) {
-    .ts-city {
-        font-size: 1.25rem;
-    }
-
-    .ts-time {
-        font-size: 1.1rem;
-    }
-
-    .travel-segment-route {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.5rem;
-    }
-
-    .ts-city-group.right {
-        text-align: center;
-    }
-
-    .ts-arrow {
-        transform: rotate(90deg);
-        width: 100%;
-        margin: 1rem 0;
-    }
-
-    .icon-rotate-90 {
-        transform: rotate(0deg);
-    }
-}
+/* Mobile optimization for preview - REMOVED to ensure consistent image generation */
+/* 
+   We removed the media query here to ensure the Travel Plan always renders in its "desktop" 
+   (ticket-like) layout, even on mobile devices. This guarantees that the generated image 
+   maintains the professional design requested.
+*/
