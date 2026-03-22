@@ -532,6 +532,7 @@ Verwendungszweck: Rechnungsnummer</textarea>
                                 <tr>
                                     <th>Airline</th>
                                     <th>Flugnr.</th>
+                                    <th>PNR (Opt)</th>
                                     <th>Von (Mitar)</th>
                                     <th>Nach (Mitar)</th>
                                     <th>Abflug</th>
@@ -569,7 +570,7 @@ Verwendungszweck: Rechnungsnummer</textarea>
                                 data-lucide="plus"></i>Reisenden hinzufügen</button>
                     </div>
 
-                    <h4 style="margin-top: 1.5rem;">Zusammenfassung</h4>
+                    <h4 style="margin-top: 1.5rem;">Zusammenfassung & Optionen</h4>
                     <div class="grid-2">
                         <div class="form-group">
                             <label>Hinflug Gesamtdauer</label>
@@ -578,6 +579,20 @@ Verwendungszweck: Rechnungsnummer</textarea>
                         <div class="form-group">
                             <label>Rückflug Gesamtdauer (Optional)</label>
                             <input id="tpTotalDurationReturn" placeholder="z.B. 8h 15m">
+                        </div>
+                        <div class="form-group">
+                            <label>Booking PNR (Optional)</label>
+                            <input id="tpGlobalPnr" placeholder="z.B. ABCDEF">
+                        </div>
+                        <div class="form-group">
+                            <label class="inline-label"
+                                style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem; font-weight: 500;">
+                                <input type="checkbox" id="tpBestaetigtStatus"
+                                    style="width: auto; height: 1.25rem; aspect-ratio: 1; cursor: pointer;">
+                                <span class="badge"
+                                    style="background: var(--color-success-500); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">Bestätigt</span>
+                                anzeigen
+                            </label>
                         </div>
                     </div>
                 </div>
