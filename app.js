@@ -2473,6 +2473,8 @@ const tpPassengersBody = document.getElementById('travelPlanPassengersBody');
 const tpTotalOutbound = document.getElementById('tpTotalDurationOutbound');
 const tpTotalReturn = document.getElementById('tpTotalDurationReturn');
 const downloadTpImageBtn = document.getElementById('downloadTravelPlanImage');
+const tpGlobalPnr = document.getElementById('tpGlobalPnr');
+const tpBestaetigtStatus = document.getElementById('tpBestaetigtStatus');
 
 if (dropdownTravelPlan) {
     dropdownTravelPlan.onclick = () => {
@@ -2518,6 +2520,7 @@ function addTravelPlanFlightRow() {
     row.innerHTML = `
         <td><input class="tp-airline" placeholder="Airline"></td>
         <td><input class="tp-pnr" placeholder="Flugnummer"></td>
+        <td><input class="tp-booking-pnr" placeholder="PNR"></td>
         <td><input class="tp-from" placeholder="Von (Stadt/Flughafen)"></td>
         <td><input class="tp-to" placeholder="Nach (Stadt/Flughafen)"></td>
         <td>
@@ -2643,6 +2646,8 @@ function addTravelPlanPassengerRow() {
 
 if (tpTotalOutbound) tpTotalOutbound.addEventListener('input', updateTravelPlanPreview);
 if (tpTotalReturn) tpTotalReturn.addEventListener('input', updateTravelPlanPreview);
+if (tpGlobalPnr) tpGlobalPnr.addEventListener('input', updateTravelPlanPreview);
+if (tpBestaetigtStatus) tpBestaetigtStatus.addEventListener('change', updateTravelPlanPreview);
 
 
 function updateTravelPlanPreview() {
@@ -2654,6 +2659,7 @@ function updateTravelPlanPreview() {
         return {
             airline: row.querySelector('.tp-airline').value,
             pnr: row.querySelector('.tp-pnr').value,
+            bookingPnr: row.querySelector('.tp-booking-pnr').value,
             fromCity: row.querySelector('.tp-from').value,
             toCity: row.querySelector('.tp-to').value,
             depDate: row.querySelector('.tp-dep-date').value,
@@ -2694,10 +2700,14 @@ function updateTravelPlanPreview() {
         if (!f.fromCity && !f.toCity) return; // Skip empty
 
         // Render Flight Card
+        const bookingPnrHtml = f.bookingPnr ? `<div class="ts-booking-pnr">PNR: <strong>${escapeHtml(f.bookingPnr)}</strong></div>` : '';
         flightHtml += `
         <div class="travel-plan-card">
             <div class="travel-segment-header">
-                <div class="ts-airline"><span class="badge">${escapeHtml(f.airline || 'Flug')}</span> <span class="ts-pnr">${escapeHtml(f.pnr || '')}</span></div>
+                <div class="ts-airline-group">
+                    <div class="ts-airline"><span class="badge">${escapeHtml(f.airline || 'Flug')}</span> <span class="ts-pnr">${escapeHtml(f.pnr || '')}</span></div>
+                    ${bookingPnrHtml}
+                </div>
                 <div class="ts-duration"><i data-lucide="clock" class="icon-xs"></i> ${escapeHtml(f.duration)}</div>
             </div>
             <div class="travel-segment-route">
@@ -2792,14 +2802,21 @@ function updateTravelPlanPreview() {
         </div>`;
     }
 
+    const globalPnr = tpGlobalPnr ? tpGlobalPnr.value.trim() : '';
+    const isBestaetigt = tpBestaetigtStatus ? tpBestaetigtStatus.checked : false;
+
     previewContainer.innerHTML = `
-    <div class="travel-plan-container">
+    <div class="travel-plan-container material3-expressive">
         <div class="travel-plan-header">
             <div class="tp-brand">
                 <i data-lucide="plane" class="tp-logo-icon"></i>
                 <span>URLAUB</span>
             </div>
-            <h1>Reiseplan</h1>
+            <div class="tp-title-area">
+                <h1>Reiseplan</h1>
+                ${isBestaetigt ? '<div class="tp-bestaetigt-badge"><i data-lucide="check-circle" class="icon-sm"></i> BESTÄTIGT</div>' : ''}
+            </div>
+            ${globalPnr ? `<div class="tp-global-pnr">Buchungscode / PNR: <strong>${escapeHtml(globalPnr)}</strong></div>` : ''}
             ${passengerHtml}
         </div>
         
@@ -2833,8 +2850,9 @@ if (downloadTpImageBtn) {
         }
 
         try {
+            // Material 3 Expressive needs sharp fonts and images - setting scale to 5 for max quality
             const canvas = await html2canvas(element, {
-                scale: 3,
+                scale: 5,
                 useCORS: true,
                 backgroundColor: null,
                 logging: false
@@ -2842,7 +2860,7 @@ if (downloadTpImageBtn) {
 
             const link = document.createElement('a');
             link.download = `Reiseplan_${new Date().toISOString().slice(0, 10)}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.href = canvas.toDataURL('image/png', 1.0);
             link.click();
         } catch (err) {
             console.error(err);
