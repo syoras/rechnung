@@ -871,6 +871,14 @@ function updatePreview() {
 
     applyBackgroundSettings()
 
+    // ========== Kompakt-Klasse fuer einfache Rechnung ==========
+    if (invoiceType === 'simple') {
+        previewEl.classList.add('simple-invoice-compact');
+    } else {
+        previewEl.classList.remove('simple-invoice-compact');
+    }
+    // ===========================================================
+
     function renderFlights(title, flights) {
         if (flights.length === 0) return "";
         let rowsHtml = "";
@@ -1158,6 +1166,57 @@ if (downloadPDFBtn) downloadPDFBtn.onclick = async () => {
         if (!canvas) return 0;
         return canvas.height * (usableWidth / canvas.width);
     };
+
+    // ========== NEU: Einfache Rechnung — Garantiert EINE Seite ==========
+    const currentInvoiceType = document.querySelector('input[name="invoiceType"]:checked')?.value || 'full';
+
+    if (currentInvoiceType === 'simple') {
+        addWatermark(pdf);
+
+        // Temporaer min-height entfernen fuer exakte Hoehenmessung
+        const originalMinHeight = previewEl.style.minHeight;
+        previewEl.style.minHeight = 'unset';
+        await new Promise(resolve => setTimeout(resolve, 60));
+
+        const fullCanvas = await html2canvas(previewEl, {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: 0,
+            width: previewEl.scrollWidth,
+            height: previewEl.scrollHeight,
+            windowWidth: previewEl.scrollWidth,
+            windowHeight: previewEl.scrollHeight
+        });
+
+        // Originalen Style wiederherstellen
+        previewEl.style.minHeight = originalMinHeight;
+
+        const usableHeight = pdfHeight - margin * 2;
+        const canvasAspect = fullCanvas.height / fullCanvas.width;
+        let imgW = usableWidth;
+        let imgH = imgW * canvasAspect;
+
+        // Falls hoeher als Seite: proportional verkleinern
+        if (imgH > usableHeight) {
+            imgH = usableHeight;
+            imgW = imgH / canvasAspect;
+        }
+
+        // Horizontal zentrieren
+        const xOffset = margin + (usableWidth - imgW) / 2;
+
+        pdf.addImage(fullCanvas, 'PNG', xOffset, margin, imgW, imgH);
+
+        const simpleFileName = `Rechnung_${document.getElementById('invoiceNumber').value}.pdf`;
+        pdf.save(simpleFileName);
+
+        if (wasHidden) previewPane.style.display = 'none';
+        showToast('PDF gespeichert (1 Seite)', 'success');
+        return; // Fertig — kein addPage() wurde aufgerufen
+    }
+    // ========== ENDE: Einfache Rechnung ==========
 
     addWatermark(pdf);
 
@@ -2097,9 +2156,26 @@ const printPDFBtn = document.getElementById('printPDF');
 if (printPDFBtn) {
     printPDFBtn.onclick = () => {
         updatePreview();
-        setTimeout(() => {
-            window.print();
-        }, 100);
+        const isSimple = (document.querySelector('input[name="invoiceType"]:checked')?.value === 'simple');
+        if (isSimple) {
+            // Sicherstellen dass die Preview sichtbar ist
+            const previewPane = document.querySelector('.preview-pane');
+            const wasHidden = previewPane && previewPane.style.display === 'none';
+            if (wasHidden) previewPane.style.display = 'flex';
+            document.body.classList.add('printing-simple-invoice');
+            setTimeout(() => {
+                window.print();
+                // Klasse nach Drucken entfernen
+                setTimeout(() => {
+                    document.body.classList.remove('printing-simple-invoice');
+                    if (wasHidden && previewPane) previewPane.style.display = 'none';
+                }, 500);
+            }, 150);
+        } else {
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        }
     };
 }
 
